@@ -1,0 +1,22 @@
+<form method="POST" id="form-ingest-data" class="form" enctype="multipart/form-data">
+    {% if not formats%}
+        <p class="mute">
+            {{ _('There are no enabled import formats.') }}
+        </p>
+    {% else %}
+        <div class="form-group">
+            <label for="field-format">{{ _('Format') }}</label>
+            <select class="form-control" id="field-format" name="format">
+                {% for name, label in formats %}
+                    <option value="{{ name }}">{{ _(label) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+    {% endif %}
+    <div class="form-group">
+        <label for="field-source">Source file</label>
+        <input type="file" class="form-control-file" name="source" id="field-source">
+    </div>
+    <button type="submit" class="btn btn-default" >{{ _('Ingest') }}</button>
+</form>

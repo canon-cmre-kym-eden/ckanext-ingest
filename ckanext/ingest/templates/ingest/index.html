@@ -1,0 +1,21 @@
+{% extends base_template|default("page.html") %}
+
+{% block subtitle %}{{ _('Ingest') }}{% endblock %}
+
+{% block breadcrumb_content %}{% endblock %}
+
+{% block primary_content_inner %}
+    {% snippet "ingest/snippets/ingest_form.html", formats=ingestion_formats  %}
+{% endblock %}
+
+{% block secondary_content %}
+    <div class="module module-narrow module-shallow">
+        <h2 class="module-heading">
+            <i class="fa fa-info-circle"></i>
+            {{ _('Ingest') }}
+        </h2>
+        <div class="module-content">
+            {% trans %}<p>Import data from different kind of source-files.</p>{% endtrans %}
+        </div>
+    </div>
+{% endblock %}
