@@ -6,6 +6,7 @@ import ckan.lib.helpers as h
 
 from flask import Blueprint
 from flask.views import MethodView
+from ckanext.ingest.cli import get_commnads
 
 from . import (
     get_index_path, get_base_template, get_main_template, get_ingestiers,
@@ -53,6 +54,7 @@ class IngestFlaskPlugin(plugins.SingletonPlugin):
     u'''Flask-specific implementation'''
 
     plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IClick)
 
     # IBlueprint
 
@@ -61,3 +63,7 @@ class IngestFlaskPlugin(plugins.SingletonPlugin):
         bp = Blueprint(u'ingest', self.__module__)
         bp.add_url_rule(path, 'index', IngestView.as_view('index'))
         return bp
+
+    # IClick
+    def get_commands(self):
+        return get_commnads()

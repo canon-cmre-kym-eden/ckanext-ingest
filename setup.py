@@ -87,9 +87,6 @@ setup(
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
 
-        [paste.paster_command]
-        ingest=ckanext.ingest.command:IngestCommand
-
     ''',
 
     # If you are changing from the default layout of your extension, you may
