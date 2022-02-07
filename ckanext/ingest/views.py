@@ -1,49 +1,49 @@
-# -*- coding: utf-8 -*-
-
-import ckan.plugins.toolkit as tk
-import ckan.lib.helpers as h
+from __future__ import annotations
 
 from flask import Blueprint
 from flask.views import MethodView
 
+import ckan.plugins.toolkit as tk
+import ckan.lib.base as base
+
 from . import utils
 
+ingest = Blueprint("ingest", __name__)
 
 def get_blueprints():
-    path = utils.get_index_path()
-    bp = Blueprint(u"ingest", __name__)
-    bp.add_url_rule(path, "index", IngestView.as_view("index"))
-    return bp
+
+    return [ingest]
 
 
 class IngestView(MethodView):
-    def get(self, *args, **kwargs):
-        data = {
-            "base_template": utils.get_base_template(),
-            "ingestion_formats": utils.get_ingestiers(),
-        }
-        return tk.render(utils.get_main_template(), data)
-
-    def post(self, *args, **kwargs):
-        r = tk.request
-        fmt = r.form.get("format")
-        source = r.files.get("source")
-        if not fmt or not source:
-            h.flash_error("Either format or source is missing.")
-            return tk.redirect_to("ingest.index", *args, **kwargs)
-
-        ingester = utils.get_ingestier(fmt)
-        if not ingester:
-            h.flash_error(
-                "There is no registered extractor for [{}] format.".format(fmt)
-            )
-            return tk.redirect_to("ingest.index", *args, **kwargs)
-        records = ingester.extract(source)
+    def _check_access(self):
         try:
-            for record in records:
-                utils.store_record(record, fmt)
-        except utils.StoreException as e:
-            h.flash_error("Error: {}.".format(e))
-        else:
-            h.flash_success("Ingestion finished.")
-        return tk.redirect_to("ingest.index", *args, **kwargs)
+            tk.check_access("ingest_web_ui", {"user": tk.g.user})
+        except tk.NotAuthorized:
+            tk.abort(401, tk._("Unauthorized to ingest data"))
+
+    def _render(self, errors=None):
+        data = {"user_dict": tk.g.userobj, "errors": errors,
+                "base_template": utils.get_base_template(),
+                }
+        return base.render("ingest/index.html", extra_vars=data)
+
+    def get(self):
+        self._check_access()
+        return self._render()
+
+    def post(self):
+        self._check_access()
+        errors = {}
+        try:
+            data = dict(tk.request.form)
+            data.update(tk.request.files)
+            result = tk.get_action("ingest_import_datasets")({}, data)
+        except tk.ValidationError as e:
+            errors = e.error_summary
+
+        return self._render(errors)
+
+
+
+ingest.add_url_rule("/ingest/from-source", view_func=IngestView.as_view("index"))
