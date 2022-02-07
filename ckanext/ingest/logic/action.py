@@ -43,7 +43,6 @@ def import_datasets(context, data_dict: ImporDatasetPayload):
                 action = "package_update"
         elif isinstance(record, strategy.ResourceRecord):
             action = "resource_create"
-            continue
         else:
             assert False, f"Unexpected record: {record}"
 
