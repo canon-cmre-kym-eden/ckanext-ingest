@@ -1,21 +1,16 @@
 import click
 import json
 import logging
-import os
 
-import ckan.model as model
 from ckan.lib.redis import connect_to_redis
 
-from ckan.common import config
-from ckanext.ingest.plugin import get_ingestier
+from . import utils
 
 logger = logging.getLogger(__name__)
 
 
 def get_commnads():
-    return [
-    ingest
-    ]
+    return [ingest]
 
 
 @click.group()
@@ -24,53 +19,53 @@ def ingest():
 
 
 @ingest.command()
-@click.argument(u'ingest_name', required=True)
+@click.argument(u"ingest_name", required=True)
 def process(ingest_name):
     try:
         name = ingest_name
     except IndexError:
-        print('You must provide name of the queue to remove')
+        print("You must provide name of the queue to remove")
         return
-    ingester = get_ingestier(name)
+    ingester = utils.get_ingestier(name)
     if ingester is None:
-        print('No queue processors registered for <{}>'.format(name))
+        print("No queue processors registered for <{}>".format(name))
         return
     conn = connect_to_redis()
-    size = conn.llen('ckanext:ingest:queue:' + name)
+    size = conn.llen("ckanext:ingest:queue:" + name)
     i = 0
     while True:
-        record = conn.lpop('ckanext:ingest:queue:' + name)
+        record = conn.lpop("ckanext:ingest:queue:" + name)
         if not record:
             break
         i += 1
-        print('Processing {:>{}} of {}'.format(i, len(str(size)), size))
+        print("Processing {:>{}} of {}".format(i, len(str(size)), size))
 
         ingester.process(json.loads(record))
-    print('Done')
+    print("Done")
 
 
 @ingest.command()
-@click.argument(u'ingest_name', required=True)
+@click.argument(u"ingest_name", required=True)
 def drop_queue(ingest_name):
     try:
         name = ingest_name
     except IndexError:
-        print('You must provide name of the queue to remove')
+        print("You must provide name of the queue to remove")
         return
 
     conn = connect_to_redis()
-    conn.delete('ckanext:ingest:queue:{}'.format(name))
-    print('Done.')
+    conn.delete("ckanext:ingest:queue:{}".format(name))
+    print("Done.")
 
 
 @ingest.command()
 def list_queues():
     conn = connect_to_redis()
-    keys = conn.keys('ckanext:ingest:queue:*')
-    print('Available queues:')
+    keys = conn.keys("ckanext:ingest:queue:*")
+    print("Available queues:")
     for key in keys:
         print(
-            '\t{}\n\t\tSize: {:>6}. Expires in {}s'.format(
-                key.split(':')[-1], conn.llen(key), conn.ttl(key)
+            "\t{}\n\t\tSize: {:>6}. Expires in {}s".format(
+                str(key).split(":")[-1], conn.llen(key), conn.ttl(key)
             )
         )
