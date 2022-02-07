@@ -10,6 +10,7 @@ from . import utils
 
 ingest = Blueprint("ingest", __name__)
 
+
 def get_blueprints():
 
     return [ingest]
@@ -23,9 +24,11 @@ class IngestView(MethodView):
             tk.abort(401, tk._("Unauthorized to ingest data"))
 
     def _render(self, errors=None):
-        data = {"user_dict": tk.g.userobj, "errors": errors,
-                "base_template": utils.get_base_template(),
-                }
+        data = {
+            "user_dict": tk.g.userobj,
+            "errors": errors,
+            "base_template": utils.get_base_template(),
+        }
         return base.render("ingest/index.html", extra_vars=data)
 
     def get(self):
@@ -43,7 +46,6 @@ class IngestView(MethodView):
             errors = e.error_summary
 
         return self._render(errors)
-
 
 
 ingest.add_url_rule("/ingest/from-source", view_func=IngestView.as_view("index"))

@@ -5,6 +5,7 @@ from typing import Iterable
 from ckan.plugins.interfaces import Interface
 from . import strategy
 
+
 class IIngest(Interface):
     """Hook into ckanext-ingest."""
 

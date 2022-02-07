@@ -15,6 +15,7 @@ DEFAULT_ENABLED = []
 
 TransformationSchema: TypeAlias = "dict[str, Rules]"
 
+
 class StoreException(Exception):
     pass
 
@@ -25,10 +26,10 @@ class Options:
     normalize_choice: bool = False
     choice_separator: str = ", "
 
+
 class Rules(NamedTuple):
     options: Options
     field: dict[str, Any]
-
 
 
 def store_record(record, fmt):
@@ -42,7 +43,7 @@ def store_record(record, fmt):
 
 def get_index_path():
     """Return path for registration ingest route."""
-    return tk.config.get(u"ckanext.ingest.index_path", u"/ckan-admin/ingest")
+    return tk.config.get("ckanext.ingest.index_path", "/ckan-admin/ingest")
 
 
 def get_base_template():
@@ -65,7 +66,6 @@ def get_ingestier(name):
         if name == n:
             return instance
     return None
-
 
 
 def _get_transformation_schema(type_: str, fieldset: str) -> TransformationSchema:
@@ -91,25 +91,26 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
         result[field] = data[k]
 
         if rules.options.normalize_choice:
-            result[field] = _normalize_choice(result[field], tk.h.scheming_field_choices(rules.field), rules.options.choice_separator)
+            result[field] = _normalize_choice(
+                result[field],
+                tk.h.scheming_field_choices(rules.field),
+                rules.options.choice_separator,
+            )
 
     return result
 
-def _normalize_choice(value: Union[str, list[str], None], choices: list[dict[str, str]], separator: str) -> Union[str, list[str], None]:
+
+def _normalize_choice(
+    value: Union[str, list[str], None], choices: list[dict[str, str]], separator: str
+) -> Union[str, list[str], None]:
     if not value:
         return
 
     if not isinstance(value, list):
         value = value.split(separator)
 
-    mapping = {
-        o["label"]: o["value"]
-        for o in choices
-        if "label" in o
-    }
-    value = [
-        mapping.get(v, v) for v in value
-    ]
+    mapping = {o["label"]: o["value"] for o in choices if "label" in o}
+    value = [mapping.get(v, v) for v in value]
 
     if len(value) > 1:
         return value
@@ -117,10 +118,15 @@ def _normalize_choice(value: Union[str, list[str], None], choices: list[dict[str
     return value[0]
 
 
-def transform_package(data_dict: dict[str, Any], type_: str = "dataset") -> dict[str, Any]:
+def transform_package(
+    data_dict: dict[str, Any], type_: str = "dataset"
+) -> dict[str, Any]:
     schema = _get_transformation_schema(type_, "dataset")
     return _transform(data_dict, schema)
 
-def transform_resoruce(data_dict: dict[str, Any], type_: str = "dataset") -> dict[str, Any]:
+
+def transform_resoruce(
+    data_dict: dict[str, Any], type_: str = "dataset"
+) -> dict[str, Any]:
     schema = _get_transformation_schema(type_, "resource")
     return _transform(data_dict, schema)

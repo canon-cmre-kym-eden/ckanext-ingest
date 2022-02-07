@@ -6,8 +6,10 @@ from typing_extensions import TypedDict
 
 log = logging.getLogger(__name__)
 
+
 class PackageRecord(NamedTuple):
     data: dict[str, Any]
+
 
 class ResourceRecord(NamedTuple):
     data: dict[str, Any]

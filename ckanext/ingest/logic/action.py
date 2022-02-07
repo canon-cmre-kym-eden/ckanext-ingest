@@ -15,30 +15,31 @@ from .. import strategy
 log = logging.getLogger(__name__)
 action, get_actions = Collector("ingest").split()
 
+
 class ImporDatasetPayload(TypedDict):
     source: FileStorage
     update_existing: bool
+
 
 @action
 @validate(schema.import_datasets)
 def import_datasets(context, data_dict: ImporDatasetPayload):
     tk.check_access("excelimport_import_datasets", context, data_dict)
 
-    mime = data_dict['source'].content_type
+    mime = data_dict["source"].content_type
     handler = strategy.get_handler(mime)
     if not handler:
-        raise tk.ValidationError({
-            "source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]
-        })
+        raise tk.ValidationError(
+            {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]}
+        )
 
     handler.parse(data_dict["source"].stream)
-
 
     for record in handler.records:
 
         if isinstance(record, strategy.PackageRecord):
             action = "package_create"
-            if data_dict['update_existing'] and model.Package.get(record.data["name"]):
+            if data_dict["update_existing"] and model.Package.get(record.data["name"]):
                 action = "package_update"
         elif isinstance(record, strategy.ResourceRecord):
             action = "resource_create"

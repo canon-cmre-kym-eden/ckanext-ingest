@@ -3,6 +3,7 @@ from typing import Iterable
 
 from . import strategy
 
+
 class Registry:
     items: list[strategy.ParsingStrategy]
 

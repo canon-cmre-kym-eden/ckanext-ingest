@@ -3,11 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 from .base import Handler, PackageRecord, ResourceRecord
 
-__all__ = [
-    "PackageRecord", "ResourceRecord",
-    "Handler",
-    "get_handler"
-]
+__all__ = ["PackageRecord", "ResourceRecord", "Handler", "get_handler"]
 
 
 def get_handler(mime: Any) -> Optional[Handler]:
