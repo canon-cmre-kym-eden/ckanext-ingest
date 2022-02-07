@@ -1,4 +1,5 @@
 from __future__ import annotations
+from io import BytesIO
 
 import mimetypes
 import logging
@@ -27,7 +28,7 @@ class ZipStrategy(ParsingStrategy):
     ) -> Iterable[Any]:
         from . import get_handler
 
-        with zipfile.ZipFile(source) as archive:
+        with zipfile.ZipFile(BytesIO(source.read())) as archive:
             for item in archive.namelist():
                 mime, _encoding = mimetypes.guess_type(item)
                 handler = get_handler(mime)

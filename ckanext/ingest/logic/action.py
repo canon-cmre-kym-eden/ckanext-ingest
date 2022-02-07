@@ -24,7 +24,7 @@ class ImporDatasetPayload(TypedDict):
 @action
 @validate(schema.import_datasets)
 def import_datasets(context, data_dict: ImporDatasetPayload):
-    tk.check_access("excelimport_import_datasets", context, data_dict)
+    tk.check_access("ingest_import_datasets", context, data_dict)
 
     mime = data_dict["source"].content_type
     handler = strategy.get_handler(mime)
@@ -35,17 +35,20 @@ def import_datasets(context, data_dict: ImporDatasetPayload):
 
     handler.parse(data_dict["source"].stream)
 
+    ids = []
     for record in handler.records:
-
         if isinstance(record, strategy.PackageRecord):
             action = "package_create"
             if data_dict["update_existing"] and model.Package.get(record.data["name"]):
                 action = "package_update"
         elif isinstance(record, strategy.ResourceRecord):
             action = "resource_create"
+            continue
         else:
             assert False, f"Unexpected record: {record}"
 
         result = tk.get_action(action)({"user": context["user"]}, record.data)
+        if action.startswith("package"):
+            ids.append(result["id"])
 
-    return {}
+    return ids

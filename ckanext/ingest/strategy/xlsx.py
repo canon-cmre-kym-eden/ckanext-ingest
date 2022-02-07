@@ -4,12 +4,10 @@ import logging
 from io import BytesIO
 from typing import IO, Optional
 
-import pydantic
 from openpyxl import load_workbook
 from werkzeug.datastructures import FileStorage
 
 import ckan.lib.munge as munge
-import ckan.plugins.toolkit as tk
 
 from .base import ParsingExtras, ParsingStrategy, PackageRecord, ResourceRecord
 from .. import utils
@@ -23,25 +21,15 @@ class ExcelStrategy(ParsingStrategy):
 
         md_name = "Dataset Metadata"
         res_name = "Resources"
-        try:
-            metadata_sheet = doc[md_name]
-        except KeyError as e:
-            raise tk.ValidationError(
-                {"upload": {f"Excel document does not contain '{md_name}' sheet"}}
-            )
+        if md_name not in doc or res_name not in doc:
+            log.warning("Excel document does not contain '%s' or '%s' sheet", md_name, res_name)
+            return
 
-        try:
-            resources_sheet = doc[res_name]
-        except KeyError as e:
-            raise tk.ValidationError(
-                {"upload": {f"Excel document does not contain '{res_name}' sheet"}}
-            )
+        metadata_sheet = doc[md_name]
+        resources_sheet = doc[res_name]
 
         rows = metadata_sheet.iter_rows(row_offset=1)
-        try:
-            data_dict = _prepare_data_dict(rows)
-        except pydantic.ValidationError as e:
-            raise tk.ValidationError({err["loc"][0]: err["msg"] for err in e.errors()})
+        data_dict = _prepare_data_dict(rows)
         yield PackageRecord(data_dict)
 
         for row in resources_sheet.iter_rows(row_offset=1):
