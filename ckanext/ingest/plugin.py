@@ -1,9 +1,10 @@
 from __future__ import annotations
+from typing import Type
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
 
-from . import interfaces, views, cli, registry
+from . import interfaces, views, cli, strategy
 from .logic import action, auth
 
 
@@ -14,6 +15,7 @@ class IngestPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IAuthFunctions)
+    plugins.implements(interfaces.IIngest, inherit=True)
 
     # IBlueprint
     def get_blueprint(self):
@@ -31,10 +33,10 @@ class IngestPlugin(plugins.SingletonPlugin):
     # IConfigurable
 
     def configure(self, config_):
-        registry.registry.reset()
+        strategy.strategies.reset()
 
         for plugin in plugins.PluginImplementations(interfaces.IIngest):
-            registry.registry.extend(plugin.get_ingest_strategies())
+            strategy.strategies.extend(plugin.get_ingest_strategies())
 
     # IActions
     def get_actions(self):
@@ -43,3 +45,11 @@ class IngestPlugin(plugins.SingletonPlugin):
     # IAuthFunctions
     def get_auth_functions(self):
         return auth.get_auth_functions()
+
+    # IIngest
+    def get_ingest_strategies(self) -> list[Type[strategy.ParsingStrategy]]:
+        from .strategy import xlsx, zip
+        return [
+            zip.ZipStrategy,
+            xlsx.ExcelStrategy,
+        ]

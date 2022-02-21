@@ -16,6 +16,8 @@ log = logging.getLogger(__name__)
 
 
 class ExcelStrategy(ParsingStrategy):
+    mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+
     def extract(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
 

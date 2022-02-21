@@ -1,24 +1,14 @@
 from __future__ import annotations
-import json
 import dataclasses
 from typing import Any, NamedTuple, Optional, Union
 from typing_extensions import TypeAlias
 
 import ckan.plugins.toolkit as tk
-from ckan.lib.redis import connect_to_redis, is_redis_available
-from . import registry
 
-CONFIG_ENABLED = "ckanext.ingest.enabled_types"
 CONFIG_BASE_TEMPLATE = "ckanext.ingest.base_template"
 DEFAULT_BASE_TEMPLATE = "page.html"
-DEFAULT_ENABLED = []
 
 TransformationSchema: TypeAlias = "dict[str, Rules]"
-
-
-class StoreException(Exception):
-    pass
-
 
 @dataclasses.dataclass
 class Options:
@@ -32,40 +22,23 @@ class Rules(NamedTuple):
     field: dict[str, Any]
 
 
-def store_record(record, fmt):
-    if not is_redis_available():
-        raise StoreException("Redis is not available")
-    conn = connect_to_redis()
-    key = "ckanext:ingest:queue:{}".format(fmt)
-    conn.rpush(key, json.dumps(record))
-    conn.expire(key, 3600 * 24)
-
-
-def get_index_path():
-    """Return path for registration ingest route."""
-    return tk.config.get("ckanext.ingest.index_path", "/ckan-admin/ingest")
-
-
 def get_base_template():
     """Return parent template for ingest page."""
     return tk.config.get(CONFIG_BASE_TEMPLATE, DEFAULT_BASE_TEMPLATE)
 
 
-def get_ingestiers():
-    """Return names of enabled ingestion formats."""
-    allowed = set(tk.aslist(tk.config.get(CONFIG_ENABLED, DEFAULT_ENABLED)))
-    items = list(registry)
-    if allowed:
-        items = [i for i in items if i[0] in allowed]
-    return items
+def transform_package(
+    data_dict: dict[str, Any], type_: str = "dataset"
+) -> dict[str, Any]:
+    schema = _get_transformation_schema(type_, "dataset")
+    return _transform(data_dict, schema)
 
 
-def get_ingestier(name):
-    """Return implementation of specified ingester."""
-    for n, instance in registry.registry:
-        if name == n:
-            return instance
-    return None
+def transform_resoruce(
+    data_dict: dict[str, Any], type_: str = "dataset"
+) -> dict[str, Any]:
+    schema = _get_transformation_schema(type_, "resource")
+    return _transform(data_dict, schema)
 
 
 def _get_transformation_schema(type_: str, fieldset: str) -> TransformationSchema:
@@ -116,17 +89,3 @@ def _normalize_choice(
         return value
 
     return value[0]
-
-
-def transform_package(
-    data_dict: dict[str, Any], type_: str = "dataset"
-) -> dict[str, Any]:
-    schema = _get_transformation_schema(type_, "dataset")
-    return _transform(data_dict, schema)
-
-
-def transform_resoruce(
-    data_dict: dict[str, Any], type_: str = "dataset"
-) -> dict[str, Any]:
-    schema = _get_transformation_schema(type_, "resource")
-    return _transform(data_dict, schema)

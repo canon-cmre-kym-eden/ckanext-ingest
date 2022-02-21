@@ -12,6 +12,8 @@ log = logging.getLogger(__name__)
 
 
 class ZipStrategy(ParsingStrategy):
+    mimetypes = {"application/zip"}
+
     def _make_locator(self, archive: zipfile.ZipFile):
         def locator(name: str):
             try:

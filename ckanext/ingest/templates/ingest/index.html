@@ -3,7 +3,6 @@
 {% import 'macros/form.html' as form %}
 
 
-
 {% block subtitle %}{{ _('Ingest') }}{% endblock %}
 
 {% block breadcrumb_content %}{% endblock %}
@@ -19,7 +18,9 @@
             {{ _('Ingest') }}
         </h2>
         <div class="module-content">
-            {% trans %}<p>Import data from different kind of source-files.</p>{% endtrans %}
+            <p>
+                {{ _("Import data from different kind of source-files.") }}
+            </p>
         </div>
     </div>
 {% endblock %}

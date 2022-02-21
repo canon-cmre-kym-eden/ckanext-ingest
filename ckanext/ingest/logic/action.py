@@ -38,6 +38,8 @@ def import_datasets(context, data_dict: ImporDatasetPayload):
     ids = []
     for record in handler.records:
         if isinstance(record, strategy.PackageRecord):
+            # TODO: drop/update old resources
+
             action = "package_create"
             if data_dict["update_existing"] and model.Package.get(record.data["name"]):
                 action = "package_update"
