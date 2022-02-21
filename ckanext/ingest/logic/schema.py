@@ -28,8 +28,15 @@ def uploaded_file(value):
 
 
 @validator_args
-def import_datasets(not_missing, boolean_validator):
+def import_records(not_missing, boolean_validator):
     return {
         "source": [not_missing, uploaded_file],
         "update_existing": [boolean_validator],
+    }
+
+
+@validator_args
+def extract_records(not_missing):
+    return {
+        "source": [not_missing, uploaded_file],
     }

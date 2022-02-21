@@ -1,19 +1,15 @@
 from __future__ import annotations
+
 import re
 import abc
 import logging
-from typing import IO, Any, Callable, ClassVar, Iterable, NamedTuple, Optional
+from ..record import Record
+
+from typing import IO, Any, Callable, ClassVar, Iterable, Optional
 from typing_extensions import TypedDict
 
 log = logging.getLogger(__name__)
 CASE_SWAP = re.compile("(?<=[a-z0-9])(?=[A-Z])")
-
-class PackageRecord(NamedTuple):
-    data: dict[str, Any]
-
-
-class ResourceRecord(NamedTuple):
-    data: dict[str, Any]
 
 
 class ParsingExtras(TypedDict, total=False):
@@ -28,8 +24,7 @@ class Handler:
         self.strategy = strategy
 
     def parse(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
-
-        self.records = self.strategy.extract(source, extras)
+        return self.strategy.extract(source, extras)
 
 
 class ParsingStrategy(abc.ABC):
@@ -42,13 +37,12 @@ class ParsingStrategy(abc.ABC):
             parts.pop()
         return "_".join(map(str.lower, parts))
 
-
     @classmethod
-    def can_handle(cls, mime: str) -> bool:
+    def can_handle(cls, mime: Optional[str], source: IO[bytes]) -> bool:
         return mime in cls.mimetypes
 
     @abc.abstractmethod
     def extract(
         self, source: IO[bytes], extras: Optional[ParsingExtras] = None
-    ) -> Iterable[Any]:
+    ) -> Iterable[Record]:
         return []

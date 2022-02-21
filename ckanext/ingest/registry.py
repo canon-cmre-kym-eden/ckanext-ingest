@@ -3,6 +3,7 @@ from typing import Iterable, TypeVar, Generic
 
 T = TypeVar("T")
 
+
 class Registry(Generic[T]):
     items: list[T]
 

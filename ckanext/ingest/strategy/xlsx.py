@@ -6,16 +6,16 @@ from typing import IO, Optional
 
 from openpyxl import load_workbook
 from werkzeug.datastructures import FileStorage
-
 import ckan.lib.munge as munge
 
-from .base import ParsingExtras, ParsingStrategy, PackageRecord, ResourceRecord
-from .. import utils
+from .base import ParsingExtras, ParsingStrategy
+from ..record import PackageRecord, ResourceRecord
+
 
 log = logging.getLogger(__name__)
 
 
-class ExcelStrategy(ParsingStrategy):
+class SeedExcelStrategy(ParsingStrategy):
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
     def extract(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
@@ -24,15 +24,20 @@ class ExcelStrategy(ParsingStrategy):
         md_name = "Dataset Metadata"
         res_name = "Resources"
         if md_name not in doc or res_name not in doc:
-            log.warning("Excel document does not contain '%s' or '%s' sheet", md_name, res_name)
+            log.warning(
+                "Excel document does not contain '%s' or '%s' sheet", md_name, res_name
+            )
             return
 
         metadata_sheet = doc[md_name]
         resources_sheet = doc[res_name]
 
         rows = metadata_sheet.iter_rows(row_offset=1)
-        data_dict = _prepare_data_dict(rows)
-        yield PackageRecord(data_dict)
+        data_dict = PackageRecord(_prepare_data_dict(rows))
+        if not data_dict.data.get("name"):
+            data_dict.data["name"] = munge.munge_title_to_name(data_dict.data["title"])
+
+        yield data_dict
 
         for row in resources_sheet.iter_rows(row_offset=1):
             if not row[0].value:
@@ -47,7 +52,7 @@ class ExcelStrategy(ParsingStrategy):
 
             if resource_from.startswith("http"):
                 payload = {
-                    "package_id": data_dict["name"],
+                    "package_id": data_dict.data["name"],
                     "url": resource_from,
                     "name": resource_title,
                     "format": resource_format,
@@ -59,7 +64,7 @@ class ExcelStrategy(ParsingStrategy):
                     log.warning("Cannot locate file for resource %s", resource_title)
                     continue
                 payload = {
-                    "package_id": data_dict["name"],
+                    "package_id": data_dict.data["name"],
                     # url must be provided, even for uploads
                     "url": resource_from,
                     "format": resource_format,
@@ -86,8 +91,4 @@ def _prepare_data_dict(rows):
             continue
         raw[field] = value
 
-    data = utils.transform_package(raw)
-    if not data.get("name"):
-        data["name"] = munge.munge_title_to_name(data["title"])
-
-    return data
+    return raw

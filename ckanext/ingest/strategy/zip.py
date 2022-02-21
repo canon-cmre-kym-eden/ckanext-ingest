@@ -33,13 +33,11 @@ class ZipStrategy(ParsingStrategy):
         with zipfile.ZipFile(BytesIO(source.read())) as archive:
             for item in archive.namelist():
                 mime, _encoding = mimetypes.guess_type(item)
-                handler = get_handler(mime)
+                handler = get_handler(mime, archive.open(item))
                 if not handler:
                     log.debug("Skip %s with MIMEType %s", item, mime)
                     continue
 
-                handler.parse(
+                yield from handler.parse(
                     archive.open(item), {"file_locator": self._make_locator(archive)}
                 )
-
-                yield from handler.records

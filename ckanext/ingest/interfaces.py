@@ -10,6 +10,5 @@ class IIngest(Interface):
     """Hook into ckanext-ingest."""
 
     def get_ingest_strategies(self) -> Iterable[Type[strategy.ParsingStrategy]]:
-        """Return an iterable of provided parsing strategies.
-        """
+        """Return an iterable of provided parsing strategies."""
         return []

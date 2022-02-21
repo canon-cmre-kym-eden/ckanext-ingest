@@ -8,7 +8,12 @@ auth, get_auth_functions = Collector("ingest").split()
 
 
 @auth
-def import_datasets(context, data_dict):
+def import_records(context, data_dict):
+    return tk.check_access("package_create", context, data_dict)
+
+
+@auth
+def extract_records(context, data_dict):
     return tk.check_access("package_create", context, data_dict)
 
 

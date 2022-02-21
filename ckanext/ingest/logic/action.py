@@ -1,55 +1,80 @@
 from __future__ import annotations
+
 import logging
-from typing_extensions import TypedDict
+from typing import Any
+from typing_extensions import TypedDict, Literal
 
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
 import ckan.model as model
 
 from ckanext.toolbelt.decorators import Collector
-from werkzeug.datastructures import FileStorage
 
 from . import schema
-from .. import strategy
+from .. import strategy, record
 
 log = logging.getLogger(__name__)
 action, get_actions = Collector("ingest").split()
 
 
-class ImporDatasetPayload(TypedDict):
-    source: FileStorage
-    update_existing: bool
+class RecordDict(TypedDict):
+    exists: bool
+    type: Literal["package", "resource"]
+    data: dict[str, Any]
 
 
 @action
-@validate(schema.import_datasets)
-def import_datasets(context, data_dict: ImporDatasetPayload):
-    tk.check_access("ingest_import_datasets", context, data_dict)
-
+@validate(schema.extract_records)
+def extract_records(context, data_dict) -> list[RecordDict]:
+    tk.check_access("ingest_extract_records", context, data_dict)
     mime = data_dict["source"].content_type
-    handler = strategy.get_handler(mime)
+    handler = strategy.get_handler(mime, data_dict["source"])
     if not handler:
         raise tk.ValidationError(
             {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]}
         )
+    records: list[RecordDict] = []
+    for r in handler.parse(data_dict["source"].stream):
+        if isinstance(r, record.PackageRecord):
+            exists = model.Package.get(r.data.get("name", "")) is not None
+            type_ = "package"
+        elif isinstance(r, record.ResourceRecord):
+            exists = model.Resource.get(r.data.get("id", "")) is not None
+            type_ = "resource"
+        else:
+            assert False, f"Unexpected record: {r}"
 
-    handler.parse(data_dict["source"].stream)
+        records.append(
+            {
+                "type": type_,
+                "exists": exists,
+                "data": r.data,
+            }
+        )
+    return records
+
+
+@action
+@validate(schema.import_records)
+def import_records(context, data_dict):
+    tk.check_access("ingest_import_records", context, data_dict)
 
     ids = []
-    for record in handler.records:
-        if isinstance(record, strategy.PackageRecord):
-            # TODO: drop/update old resources
+    record: RecordDict
+    for record in tk.get_action("ingest_extract_records")(context, data_dict):
 
-            action = "package_create"
-            if data_dict["update_existing"] and model.Package.get(record.data["name"]):
-                action = "package_update"
-        elif isinstance(record, strategy.ResourceRecord):
-            action = "resource_create"
-        else:
-            assert False, f"Unexpected record: {record}"
+        action = (
+            record["type"]
+            + "_"
+            + (
+                "update"
+                if record["exists"] and data_dict["update_existing"]
+                else "create"
+            )
+        )
 
-        result = tk.get_action(action)({"user": context["user"]}, record.data)
-        if action.startswith("package"):
+        result = tk.get_action(action)({"user": context["user"]}, record["data"])
+        if record["type"] == "package":
             ids.append(result["id"])
 
     return ids

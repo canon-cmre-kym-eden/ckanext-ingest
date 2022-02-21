@@ -48,8 +48,10 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     # IIngest
     def get_ingest_strategies(self) -> list[Type[strategy.ParsingStrategy]]:
-        from .strategy import xlsx, zip
+        from .strategy import zip, xlsx, csv
+
         return [
             zip.ZipStrategy,
-            xlsx.ExcelStrategy,
+            xlsx.SeedExcelStrategy,
+            csv.CsvStrategy,
         ]
