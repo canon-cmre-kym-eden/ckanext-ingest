@@ -1,21 +1,38 @@
 from __future__ import annotations
+import abc
 
 import dataclasses
 from typing import Any
+
+import ckan.model as model
+import ckan.plugins.toolkit as tk
+
 from . import transform
 
+@dataclasses.dataclass
+class Options:
+    update_existing: bool = False
+    verbose: bool = False
 
 @dataclasses.dataclass
-class Record:
-    raw: dataclasses.InitVar[dict[str, Any]]
+class Record(abc.ABC):
+    raw: dict[str, Any]
     data: dict[str, Any] = dataclasses.field(init=False)
+    options: Options = dataclasses.field(default_factory=Options, init=False)
 
-    def __post_init__(self, raw):
-        self.data = self.transform(raw)
+    def __post_init__(self):
+        self.data = self.transform(self.raw)
 
     def transform(self, raw):
         return raw
 
+    @abc.abstractmethod
+    def ingest(self, context: dict[str, Any]):
+        pass
+
+    def set_options(self, data: dict[str, Any]):
+        fields = {f.name for f in dataclasses.fields(self)}
+        self.options = Options(**{k: v for k, v in data.items() if k in fields})
 
 @dataclasses.dataclass
 class TypedRecord(Record):
@@ -34,6 +51,21 @@ class PackageRecord(TypedRecord):
         data = transform.transform_package(raw, self.type)
         return data
 
+    def ingest(self, context: dict[str, Any]):
+        exists = model.Package.get(self.data.get("id", self.data.get("name"))) is not None
+        action = "package_" + (
+            "update"
+            if exists and self.options.update_existing
+            else "create"
+        )
+        result = tk.get_action(action)(context, self.data)
+        if self.options.verbose:
+            return result
+
+        return {
+            "id": result["id"],
+            "type": result["type"],
+        }
 
 @dataclasses.dataclass
 class ResourceRecord(TypedRecord):
@@ -42,3 +74,19 @@ class ResourceRecord(TypedRecord):
     def transform(self, raw):
         data = transform.transform_resource(raw, self.type)
         return data
+
+    def ingest(self, context: dict[str, Any]):
+        exists = model.Resource.get(self.data.get("id", "")) is not None
+        action = "resource_" + (
+            "update"
+            if exists and self.options.update_existing
+            else "create"
+        )
+
+        result = tk.get_action(action)(context, self.data)
+        if self.options.verbose:
+            return result
+        return {
+            "id": result["id"],
+            "package_id": result["package_id"],
+        }

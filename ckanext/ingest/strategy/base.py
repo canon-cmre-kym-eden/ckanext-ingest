@@ -41,6 +41,10 @@ class ParsingStrategy(abc.ABC):
     def can_handle(cls, mime: Optional[str], source: IO[bytes]) -> bool:
         return mime in cls.mimetypes
 
+    @classmethod
+    def must_handle(cls, mime: Optional[str], source: IO[bytes]) -> bool:
+        return False
+
     @abc.abstractmethod
     def extract(
         self, source: IO[bytes], extras: Optional[ParsingExtras] = None

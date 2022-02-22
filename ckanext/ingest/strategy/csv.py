@@ -1,4 +1,5 @@
 from __future__ import annotations
+from io import StringIO
 
 import logging
 from typing import IO, Iterable, Optional, Type
@@ -17,7 +18,8 @@ class CsvStrategy(ParsingStrategy):
     def extract(
         self, source: IO[bytes], extras: Optional[ParsingExtras] = None
     ) -> Iterable[Record]:
-        reader = csv.DictReader(map(str, source.readlines()))
+
+        reader = csv.DictReader(StringIO(source.read().decode()))
         yield from map(self._record_factory(source), reader)
 
     def _record_factory(self, source: IO[bytes]) -> Type[Record]:

@@ -5,7 +5,10 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
 
 from . import interfaces, views, cli, strategy
-from .logic import action, auth
+from .logic import action, auth, validators
+
+CONFIG_WHITELIST = "ckanext.ingest.strategy.whitelist"
+DEFAULT_WHITELIST = []
 
 
 class IngestPlugin(plugins.SingletonPlugin):
@@ -13,9 +16,14 @@ class IngestPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IClick)
+    plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(interfaces.IIngest, inherit=True)
+
+    # IValidators
+    def get_validators(self):
+        return validators.get_validators()
 
     # IBlueprint
     def get_blueprint(self):
@@ -34,9 +42,12 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     def configure(self, config_):
         strategy.strategies.reset()
-
+        whitelist = tk.aslist(tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST))
         for plugin in plugins.PluginImplementations(interfaces.IIngest):
-            strategy.strategies.extend(plugin.get_ingest_strategies())
+            items = plugin.get_ingest_strategies()
+            if whitelist:
+                items = [item for item in items if item.name() in whitelist]
+            strategy.strategies.extend(items)
 
     # IActions
     def get_actions(self):

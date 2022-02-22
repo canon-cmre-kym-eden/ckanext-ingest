@@ -10,6 +10,15 @@ strategies = registry.Registry[Type[ParsingStrategy]]()
 
 
 def get_handler(mime: Optional[str], source: IO[bytes]) -> Optional[Handler]:
+    choices = []
     for strategy in strategies:
-        if strategy.can_handle(mime, source):
+        if not strategy.can_handle(mime, source):
+            continue
+
+        if strategy.must_handle(mime, source):
             return Handler(strategy())
+
+        choices.append(strategy)
+
+    if choices:
+        return Handler(choices[0]())

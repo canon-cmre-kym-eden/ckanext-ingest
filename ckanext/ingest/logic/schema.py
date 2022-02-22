@@ -8,9 +8,10 @@ from werkzeug.datastructures import FileStorage
 
 import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
-
+from .. import artifact
 
 def uploaded_file(value):
+
     if isinstance(value, FileStorage):
         return value
 
@@ -28,10 +29,13 @@ def uploaded_file(value):
 
 
 @validator_args
-def import_records(not_missing, boolean_validator):
+def import_records(not_missing, boolean_validator, default, convert_to_json_if_string, dict_only, one_of):
     return {
         "source": [not_missing, uploaded_file],
         "update_existing": [boolean_validator],
+        "verbose": [boolean_validator],
+        "report": [default("stats"), one_of([t.name for t in artifact.Type])],
+        "overrides": [default("{}"), convert_to_json_if_string, dict_only],
     }
 
 
