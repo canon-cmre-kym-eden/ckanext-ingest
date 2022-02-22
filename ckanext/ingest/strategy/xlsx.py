@@ -4,7 +4,6 @@ import logging
 from io import BytesIO
 from typing import IO, Optional
 
-from openpyxl import load_workbook
 from werkzeug.datastructures import FileStorage
 import ckan.lib.munge as munge
 
@@ -19,6 +18,8 @@ class SeedExcelStrategy(ParsingStrategy):
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
     def extract(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
+        from openpyxl import load_workbook
+
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
 
         md_name = "Dataset Metadata"
