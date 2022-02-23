@@ -6,6 +6,7 @@ import json
 
 from typing import Any
 
+
 def make_artifacts(report: str) -> Artifacts:
     return Type[report].value()
 
@@ -19,6 +20,7 @@ class Artifacts:
 
     def collect(self):
         pass
+
 
 class DetailedArtifacts(Artifacts):
     collection: list[dict[str, Any]]
@@ -39,6 +41,7 @@ class DetailedArtifacts(Artifacts):
     def collect(self):
         return self.collection
 
+
 class TmpArtifacts(Artifacts):
     def __init__(self):
         self.output = tempfile.NamedTemporaryFile("w", delete=False)
@@ -56,6 +59,7 @@ class TmpArtifacts(Artifacts):
     def collect(self):
         self.output.close()
         return {"report_path": self.output.name}
+
 
 class StatArtifacts(Artifacts):
     succeed: int = 0

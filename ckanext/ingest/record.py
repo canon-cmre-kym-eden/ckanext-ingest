@@ -9,10 +9,12 @@ import ckan.plugins.toolkit as tk
 
 from . import transform
 
+
 @dataclasses.dataclass
 class Options:
     update_existing: bool = False
     verbose: bool = False
+
 
 @dataclasses.dataclass
 class Record(abc.ABC):
@@ -26,6 +28,9 @@ class Record(abc.ABC):
     def transform(self, raw):
         return raw
 
+    def fill(self, defaults: dict[str, Any], overrides: dict[str, Any]):
+        self.data = {**defaults, **self.data, **overrides}
+
     @abc.abstractmethod
     def ingest(self, context: dict[str, Any]):
         pass
@@ -33,6 +38,7 @@ class Record(abc.ABC):
     def set_options(self, data: dict[str, Any]):
         fields = {f.name for f in dataclasses.fields(self)}
         self.options = Options(**{k: v for k, v in data.items() if k in fields})
+
 
 @dataclasses.dataclass
 class TypedRecord(Record):
@@ -52,11 +58,11 @@ class PackageRecord(TypedRecord):
         return data
 
     def ingest(self, context: dict[str, Any]):
-        exists = model.Package.get(self.data.get("id", self.data.get("name"))) is not None
+        exists = (
+            model.Package.get(self.data.get("id", self.data.get("name"))) is not None
+        )
         action = "package_" + (
-            "update"
-            if exists and self.options.update_existing
-            else "create"
+            "update" if exists and self.options.update_existing else "create"
         )
         result = tk.get_action(action)(context, self.data)
         if self.options.verbose:
@@ -66,6 +72,7 @@ class PackageRecord(TypedRecord):
             "id": result["id"],
             "type": result["type"],
         }
+
 
 @dataclasses.dataclass
 class ResourceRecord(TypedRecord):
@@ -78,9 +85,7 @@ class ResourceRecord(TypedRecord):
     def ingest(self, context: dict[str, Any]):
         exists = model.Resource.get(self.data.get("id", "")) is not None
         action = "resource_" + (
-            "update"
-            if exists and self.options.update_existing
-            else "create"
+            "update" if exists and self.options.update_existing else "create"
         )
 
         result = tk.get_action(action)(context, self.data)

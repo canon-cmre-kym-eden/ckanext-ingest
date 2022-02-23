@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-import contextlib
-import click
+import itertools
 from typing import Any
+
 
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
@@ -32,28 +32,29 @@ def extract_records(context, data_dict) -> list[dict[str, Any]]:
 def import_records(context, data_dict):
     tk.check_access("ingest_import_records", context, data_dict)
 
+    start = data_dict.get("start", 0)
+    rows = data_dict.get("rows")
+    if rows is not None:
+        rows += start
+
     artifacts = make_artifacts(data_dict["report"])
     records = _extract_records(data_dict)
 
-    if context.get("with_progressbar"):
-        records = list(records)
-        pool = click.progressbar(records)
-    else:
-        pool = contextlib.nullcontext(records)
+    for record in itertools.islice(records, start, rows):
 
-    with pool as bar:
-        for record in bar:
-            record.set_options(data_dict)
-            record.data.update(data_dict["overrides"])
-            try:
-                result = record.ingest({"user": context["user"]})
-            except tk.ValidationError as e:
-                artifacts.fail({"error": e.error_dict, "source": record.raw})
-            except tk.ObjectNotFound as e:
-                artifacts.fail({"error": e.message or "Package does not exists", "source": record.raw})
+        record.set_options(data_dict)
+        record.fill(data_dict["defaults"], data_dict["overrides"])
+        try:
+            result = record.ingest({"user": context["user"]})
+        except tk.ValidationError as e:
+            artifacts.fail({"error": e.error_dict, "source": record.raw})
+        except tk.ObjectNotFound as e:
+            artifacts.fail(
+                {"error": e.message or "Package does not exists", "source": record.raw}
+            )
 
-            else:
-                artifacts.success({"result": result})
+        else:
+            artifacts.success({"result": result})
 
     return artifacts.collect()
 

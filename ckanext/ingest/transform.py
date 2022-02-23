@@ -15,10 +15,12 @@ class Options:
     choice_separator: str = ", "
     convert: str = ""
 
+
 class Rules(NamedTuple):
     options: Options
     field: dict[str, Any]
     schema: dict[str, Any]
+
 
 def transform_package(
     data_dict: dict[str, Any], type_: str = "dataset"
@@ -58,17 +60,22 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
         if k not in data:
             continue
 
-        validators = validators_from_string(rules.options.convert, rules.field, rules.schema)
+        validators = validators_from_string(
+            rules.options.convert, rules.field, rules.schema
+        )
         valid_data, _err = tk.navl_validate({field: data[k]}, {field: validators})
 
-        result[field] = valid_data[field]
+        value = valid_data[field]
+        if value == "":
+            continue
 
         if rules.options.normalize_choice:
-            result[field] = _normalize_choice(
-                result[field],
+            value = _normalize_choice(
+                value,
                 tk.h.scheming_field_choices(rules.field),
                 rules.options.choice_separator,
             )
+        result[field] = value
 
     return result
 

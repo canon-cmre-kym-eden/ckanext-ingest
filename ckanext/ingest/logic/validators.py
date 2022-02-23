@@ -23,7 +23,7 @@ def munge_name(value):
 def strip_prefix(prefix):
     def validator(value):
         if isinstance(value, str) and value.startswith(prefix):
-            value = value[len(prefix):]
+            value = value[len(prefix) :]
         return value
 
     return validator

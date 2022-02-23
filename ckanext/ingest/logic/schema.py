@@ -10,6 +10,7 @@ import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
 from .. import artifact
 
+
 def uploaded_file(value):
 
     if isinstance(value, FileStorage):
@@ -29,18 +30,32 @@ def uploaded_file(value):
 
 
 @validator_args
-def import_records(not_missing, boolean_validator, default, convert_to_json_if_string, dict_only, one_of):
+def import_records(
+    not_missing,
+    boolean_validator,
+    default,
+    convert_to_json_if_string,
+    dict_only,
+    one_of,
+    natural_number_validator,
+    ignore_missing,
+):
     return {
         "source": [not_missing, uploaded_file],
+        "report": [default("stats"), one_of([t.name for t in artifact.Type])],
         "update_existing": [boolean_validator],
         "verbose": [boolean_validator],
-        "report": [default("stats"), one_of([t.name for t in artifact.Type])],
+        "defaults": [default("{}"), convert_to_json_if_string, dict_only],
         "overrides": [default("{}"), convert_to_json_if_string, dict_only],
+        "start": [default(0), natural_number_validator],
+        "rows": [ignore_missing, natural_number_validator],
     }
 
 
 @validator_args
-def extract_records(not_missing):
+def extract_records(not_missing, default, natural_number_validator, ignore_missing):
     return {
         "source": [not_missing, uploaded_file],
+        "start": [default(0), natural_number_validator],
+        "rows": [ignore_missing, natural_number_validator],
     }
