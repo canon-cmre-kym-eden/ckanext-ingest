@@ -41,7 +41,6 @@ def import_records(context, data_dict):
     records = _extract_records(data_dict)
 
     for record in itertools.islice(records, start, rows):
-
         record.set_options(data_dict)
         record.fill(data_dict["defaults"], data_dict["overrides"])
         try:

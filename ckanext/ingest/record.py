@@ -36,7 +36,8 @@ class Record(abc.ABC):
         pass
 
     def set_options(self, data: dict[str, Any]):
-        fields = {f.name for f in dataclasses.fields(self)}
+        fields = {f.name for f in dataclasses.fields(self.options)}
+
         self.options = Options(**{k: v for k, v in data.items() if k in fields})
 
 
@@ -71,6 +72,7 @@ class PackageRecord(TypedRecord):
         return {
             "id": result["id"],
             "type": result["type"],
+            "action": action,
         }
 
 
@@ -94,4 +96,5 @@ class ResourceRecord(TypedRecord):
         return {
             "id": result["id"],
             "package_id": result["package_id"],
+            "action": action,
         }

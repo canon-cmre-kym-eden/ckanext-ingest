@@ -72,12 +72,13 @@ def process(
     mime, _enc = mimetypes.guess_type(source.name)
 
     result = tk.get_action("ingest_import_records")(
-        {"user": user["name"], "with_progressbar": True},
+        {"user": user["name"]},
         {
             "source": FileStorage(source, content_type=mime),
             "report": report,
             "start": start,
             "rows": rows,
+            "update_existing": True,
             "defaults": dict(pair for pair in defaults if len(pair) == 2),
             "overrides": dict(pair for pair in overrides if len(pair) == 2),
         },
