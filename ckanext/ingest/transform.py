@@ -10,10 +10,14 @@ TransformationSchema: TypeAlias = "dict[str, Rules]"
 
 @dataclasses.dataclass
 class Options:
-    alias: Optional[str] = None
+    alias: list[str] = dataclasses.field(default_factory=list)
     normalize_choice: bool = False
     choice_separator: str = ", "
     convert: str = ""
+
+    def __post_init__(self):
+        if isinstance(self.alias, str):
+            self.alias = [self.alias]
 
 
 class Rules(NamedTuple):
@@ -55,17 +59,18 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
     result = {}
 
     for field, rules in schema.items():
-        k = rules.options.alias or rules.field["label"]
-
-        if k not in data:
+        for k in rules.options.alias or [rules.field["label"]]:
+            if k in data:
+                break
+        else:
             continue
 
         validators = validators_from_string(
             rules.options.convert, rules.field, rules.schema
         )
-        valid_data, _err = tk.navl_validate({field: data[k]}, {field: validators})
+        valid_data, _err = tk.navl_validate(data, {k: validators})
 
-        value = valid_data[field]
+        value = valid_data[k]
         if value == "":
             continue
 
