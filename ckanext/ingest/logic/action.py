@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import itertools
+import mimetypes
 from typing import Any
 
 
@@ -59,12 +60,15 @@ def import_records(context, data_dict):
 
 
 def _extract_records(data_dict: dict[str, Any]):
-    mime = data_dict["source"].content_type
-    handler = strategy.get_handler(mime, data_dict["source"].stream)
+    mime, _encoding = mimetypes.guess_type(data_dict["source"].filename)
+    if not mime:
+        mime = data_dict["source"].content_type
+
+    handler = strategy.get_handler(mime, data_dict["source"])
 
     if not handler:
         raise tk.ValidationError(
             {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]}
         )
 
-    return handler.parse(data_dict["source"].stream)
+    return handler.parse(data_dict["source"])

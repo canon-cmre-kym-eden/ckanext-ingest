@@ -59,7 +59,9 @@ def supported():
         click.style("instead", bold=True)
     ),
 )
+@click.pass_context
 def process(
+    ctx: click.Context,
     source: IO[bytes],
     report: str,
     start: int,
@@ -71,16 +73,19 @@ def process(
     user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
     mime, _enc = mimetypes.guess_type(source.name)
 
-    result = tk.get_action("ingest_import_records")(
-        {"user": user["name"]},
-        {
-            "source": FileStorage(source, content_type=mime),
-            "report": report,
-            "start": start,
-            "rows": rows,
-            "update_existing": True,
-            "defaults": dict(pair for pair in defaults if len(pair) == 2),
-            "overrides": dict(pair for pair in overrides if len(pair) == 2),
-        },
-    )
+    with ctx.meta["flask_app"].test_request_context():
+        tk.g.user = user["name"]
+
+        result = tk.get_action("ingest_import_records")(
+            {"user": user["name"]},
+            {
+                "source": FileStorage(source, content_type=mime),
+                "report": report,
+                "start": start,
+                "rows": rows,
+                "update_existing": True,
+                "defaults": dict(pair for pair in defaults if len(pair) == 2),
+                "overrides": dict(pair for pair in overrides if len(pair) == 2),
+            },
+        )
     click.echo(result)

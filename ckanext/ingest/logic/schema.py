@@ -12,7 +12,6 @@ from .. import artifact
 
 
 def uploaded_file(value):
-
     if isinstance(value, FileStorage):
         return value
 

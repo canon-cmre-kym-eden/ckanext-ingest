@@ -3,6 +3,7 @@ from io import StringIO
 
 import logging
 from typing import IO, Iterable, Optional, Type
+from werkzeug.datastructures import FileStorage
 import csv
 
 from .base import ParsingStrategy, ParsingExtras
@@ -16,11 +17,11 @@ class CsvStrategy(ParsingStrategy):
     mimetypes = {"text/csv"}
 
     def extract(
-        self, source: IO[bytes], extras: Optional[ParsingExtras] = None
+        self, source: FileStorage, extras: Optional[ParsingExtras] = None
     ) -> Iterable[Record]:
 
         reader = csv.DictReader(StringIO(source.read().decode()))
         yield from map(self._record_factory(source), reader)
 
-    def _record_factory(self, source: IO[bytes]) -> Type[Record]:
+    def _record_factory(self, source: FileStorage) -> Type[Record]:
         return PackageRecord

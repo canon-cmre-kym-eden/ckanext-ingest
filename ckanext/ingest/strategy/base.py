@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 import abc
 import logging
+from werkzeug.datastructures import FileStorage
+
 from ..record import Record
 
 from typing import IO, Any, Callable, ClassVar, Iterable, Optional
@@ -23,7 +25,7 @@ class Handler:
         self.data = None
         self.strategy = strategy
 
-    def parse(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
+    def parse(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
         return self.strategy.extract(source, extras)
 
 
@@ -38,15 +40,15 @@ class ParsingStrategy(abc.ABC):
         return "_".join(map(str.lower, parts))
 
     @classmethod
-    def can_handle(cls, mime: Optional[str], source: IO[bytes]) -> bool:
+    def can_handle(cls, mime: Optional[str], source: FileStorage) -> bool:
         return mime in cls.mimetypes
 
     @classmethod
-    def must_handle(cls, mime: Optional[str], source: IO[bytes]) -> bool:
+    def must_handle(cls, mime: Optional[str], source: FileStorage) -> bool:
         return False
 
     @abc.abstractmethod
     def extract(
-        self, source: IO[bytes], extras: Optional[ParsingExtras] = None
+        self, source: FileStorage, extras: Optional[ParsingExtras] = None
     ) -> Iterable[Record]:
         return []

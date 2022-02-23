@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class SeedExcelStrategy(ParsingStrategy):
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
-    def extract(self, source: IO[bytes], extras: Optional[ParsingExtras] = None):
+    def extract(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
         from openpyxl import load_workbook
 
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)

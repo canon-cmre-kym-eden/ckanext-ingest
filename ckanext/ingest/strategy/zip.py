@@ -4,6 +4,7 @@ from io import BytesIO
 import mimetypes
 import logging
 from typing import IO, Any, Iterable, Optional
+from werkzeug.datastructures import FileStorage
 import zipfile
 from .base import ParsingStrategy, ParsingExtras
 
@@ -26,18 +27,18 @@ class ZipStrategy(ParsingStrategy):
         return locator
 
     def extract(
-        self, source: IO[bytes], extras: Optional[ParsingExtras] = None
+        self, source: FileStorage, extras: Optional[ParsingExtras] = None
     ) -> Iterable[Any]:
         from . import get_handler
 
         with zipfile.ZipFile(BytesIO(source.read())) as archive:
             for item in archive.namelist():
                 mime, _encoding = mimetypes.guess_type(item)
-                handler = get_handler(mime, archive.open(item))
+                handler = get_handler(mime, FileStorage(archive.open(item)))
                 if not handler:
                     log.debug("Skip %s with MIMEType %s", item, mime)
                     continue
 
                 yield from handler.parse(
-                    archive.open(item), {"file_locator": self._make_locator(archive)}
+                    FileStorage(archive.open(item)), {"file_locator": self._make_locator(archive)}
                 )
