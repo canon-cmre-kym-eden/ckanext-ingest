@@ -40,5 +40,6 @@ class ZipStrategy(ParsingStrategy):
                     continue
 
                 yield from handler.parse(
-                    FileStorage(archive.open(item)), {"file_locator": self._make_locator(archive)}
+                    FileStorage(archive.open(item)),
+                    {"file_locator": self._make_locator(archive)},
                 )
