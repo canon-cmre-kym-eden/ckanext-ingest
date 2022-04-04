@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 79
+preview = true
+
+[tool.towncrier]
+issue_format = ""
+directory = "changes"
+package = "ckanext.ingest"
+package_dir = "ckanext"
+filename = "CHANGELOG.rst"
+name = "ckanext-ingest"

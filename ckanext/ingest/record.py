@@ -85,7 +85,8 @@ class ResourceRecord(TypedRecord):
         return data
 
     def ingest(self, context: dict[str, Any]):
-        exists = model.Resource.get(self.data.get("id", "")) is not None
+        existing = model.Resource.get(self.data.get("id", ""))
+        exists = existing and existing.state == "active"
         action = "resource_" + (
             "update" if exists and self.options.update_existing else "create"
         )
