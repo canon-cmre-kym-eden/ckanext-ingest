@@ -59,6 +59,14 @@ def supported():
         click.style("instead", bold=True)
     ),
 )
+@click.option(
+    "-e",
+    "--extras",
+    type=lambda v: v.split("=", 1),
+    multiple=True,
+    metavar="KEY=VALUE",
+    help="Extra properties that are sent to the source parser.",
+)
 @click.pass_context
 def process(
     ctx: click.Context,
@@ -68,6 +76,7 @@ def process(
     rows: Optional[int],
     defaults: tuple[list[str]],
     overrides: tuple[list[str]],
+    extras: tuple[list[str]],
 ):
     """Ingest data from source into CKAN."""
     user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
@@ -86,6 +95,7 @@ def process(
                 "update_existing": True,
                 "defaults": dict(pair for pair in defaults if len(pair) == 2),
                 "overrides": dict(pair for pair in overrides if len(pair) == 2),
+                "extras": dict(pair for pair in extras if len(pair) == 2),
             },
         )
     click.echo(result)

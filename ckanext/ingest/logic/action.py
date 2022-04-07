@@ -71,4 +71,4 @@ def _extract_records(data_dict: dict[str, Any]):
             {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]}
         )
 
-    return handler.parse(data_dict["source"])
+    return handler.parse(data_dict["source"], data_dict["extras"])

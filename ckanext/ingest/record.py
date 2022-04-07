@@ -46,8 +46,8 @@ class TypedRecord(Record):
     type: str
 
     @classmethod
-    def type_factory(cls, type_: str):
-        return lambda *a, **k: cls(*a, type=type_, **k)
+    def type_factory(cls, type_: str, **partial: Any):
+        return lambda *a, **k: cls(*a, type=type_, **{**k, **partial})
 
 
 @dataclasses.dataclass

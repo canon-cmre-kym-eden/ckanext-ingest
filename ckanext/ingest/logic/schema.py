@@ -48,13 +48,15 @@ def import_records(
         "overrides": [default("{}"), convert_to_json_if_string, dict_only],
         "start": [default(0), natural_number_validator],
         "rows": [ignore_missing, natural_number_validator],
+        "extras": [default("{}"), convert_to_json_if_string, dict_only],
     }
 
 
 @validator_args
-def extract_records(not_missing, default, natural_number_validator, ignore_missing):
+def extract_records(not_missing, default, natural_number_validator, ignore_missing, convert_to_json_if_string, dict_only):
     return {
         "source": [not_missing, uploaded_file],
-        "start": [default(0), natural_number_validator],
-        "rows": [ignore_missing, natural_number_validator],
+        "extras": [default("{}"), convert_to_json_if_string, dict_only],
+        # "start": [default(0), natural_number_validator],
+        # "rows": [ignore_missing, natural_number_validator],
     }

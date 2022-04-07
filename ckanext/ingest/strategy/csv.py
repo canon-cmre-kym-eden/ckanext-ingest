@@ -21,7 +21,7 @@ class CsvStrategy(ParsingStrategy):
     ) -> Iterable[Record]:
 
         reader = csv.DictReader(StringIO(source.read().decode()))
-        yield from map(self._record_factory(source), reader)
+        yield from map(self._record_factory(source, extras), reader)
 
-    def _record_factory(self, source: FileStorage) -> Type[Record]:
+    def _record_factory(self, source: FileStorage, extras: Optional[ParsingExtras] = None) -> Type[Record]:
         return PackageRecord
