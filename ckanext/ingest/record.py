@@ -9,6 +9,8 @@ import ckan.plugins.toolkit as tk
 
 from . import transform
 
+CONFIG_ALLOW_TRANSFER = "ckanext.ingest.allow_resource_transfer"
+DEFAULT_ALLOW_TRANSFER = False
 
 @dataclasses.dataclass
 class Options:
@@ -87,6 +89,15 @@ class ResourceRecord(TypedRecord):
     def ingest(self, context: dict[str, Any]):
         existing = model.Resource.get(self.data.get("id", ""))
         exists = existing and existing.state == "active"
+
+        allow_transfer = tk.asbool(tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER))
+        if exists and existing.package_id != self.data.get("package_id"):
+            if allow_transfer:
+                exists = False
+            else:
+                raise tk.ValidationError({"id": f"Resource already belogns to the package {existing.package_id}"})
+
+
         action = "resource_" + (
             "update" if exists and self.options.update_existing else "create"
         )
