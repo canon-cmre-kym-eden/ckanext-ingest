@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import uuid
+
 import ckan.lib.munge as munge
+
 from ckanext.toolbelt.decorators import Collector
 
 NAMESPACE_INGEST = uuid.uuid5(uuid.NAMESPACE_DNS, "ingest")

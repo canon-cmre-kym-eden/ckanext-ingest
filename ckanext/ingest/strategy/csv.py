@@ -1,14 +1,14 @@
 from __future__ import annotations
-from io import StringIO
 
-import logging
-from typing import IO, Iterable, Optional, Type
-from werkzeug.datastructures import FileStorage
 import csv
+import logging
+from io import StringIO
+from typing import IO, Iterable, Optional, Type
 
-from .base import ParsingStrategy, ParsingExtras
-from ..record import Record, PackageRecord
+from werkzeug.datastructures import FileStorage
 
+from ..record import PackageRecord, Record
+from .base import ParsingExtras, ParsingStrategy
 
 log = logging.getLogger(__name__)
 

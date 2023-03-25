@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import logging
 import itertools
+import logging
 import mimetypes
 from typing import Any
 
-
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
-from ..artifact import make_artifacts
 
 from ckanext.toolbelt.decorators import Collector
 
-from . import schema
 from .. import strategy
+from ..artifact import make_artifacts
+from . import schema
 
 log = logging.getLogger(__name__)
 action, get_actions = Collector("ingest").split()

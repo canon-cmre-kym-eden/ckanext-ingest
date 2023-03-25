@@ -1,10 +1,12 @@
 import mimetypes
 import os
 from typing import Optional
-from werkzeug.datastructures import FileStorage
+
 import pytest
-from ckan.tests.helpers import call_action
+from werkzeug.datastructures import FileStorage
+
 import ckan.plugins.toolkit as tk
+from ckan.tests.helpers import call_action
 
 
 @pytest.fixture(scope="session")
@@ -26,9 +28,7 @@ class TestExtractRecords:
         "filename", ["example.csv", "example.zip", "zipped_zip.zip"]
     )
     def test_basic(self, source, filename):
-        records = call_action(
-            "ingest_extract_records", source=source(filename)
-        )
+        records = call_action("ingest_extract_records", source=source(filename))
         assert records == [
             {"name": "hello", "title": "Hello", "type": "dataset"},
             {"name": "world", "title": "World", "type": "dataset"},
@@ -39,9 +39,7 @@ class TestExtractRecords:
             call_action("ingest_extract_records")
 
     def test_unmapped(self, source):
-        records = call_action(
-            "ingest_extract_records", source=source("unmapped.csv")
-        )
+        records = call_action("ingest_extract_records", source=source("unmapped.csv"))
         assert records == [{"type": "dataset"}, {"type": "dataset"}]
 
 
@@ -59,7 +57,5 @@ class TestImportRecords:
             call_action("ingest_import_records")
 
     def test_unmapped(self, source):
-        result = call_action(
-            "ingest_import_records", source=source("unmapped.csv")
-        )
+        result = call_action("ingest_import_records", source=source("unmapped.csv"))
         assert result == {"fail": 2, "success": 0}

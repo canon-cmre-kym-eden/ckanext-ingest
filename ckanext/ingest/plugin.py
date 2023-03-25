@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 from typing import Type
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
 
-from . import interfaces, views, cli, strategy
+from . import cli, interfaces, strategy, views
 from .logic import action, auth, validators
 
 CONFIG_WHITELIST = "ckanext.ingest.strategy.whitelist"
@@ -42,9 +43,7 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     def configure(self, config_):
         strategy.strategies.reset()
-        whitelist = tk.aslist(
-            tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST)
-        )
+        whitelist = tk.aslist(tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST))
         for plugin in plugins.PluginImplementations(interfaces.IIngest):
             items = plugin.get_ingest_strategies()
             if whitelist:
@@ -61,7 +60,7 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     # IIngest
     def get_ingest_strategies(self) -> list[Type[strategy.ParsingStrategy]]:
-        from .strategy import zip, xlsx, csv
+        from .strategy import csv, xlsx, zip
 
         return [
             zip.ZipStrategy,

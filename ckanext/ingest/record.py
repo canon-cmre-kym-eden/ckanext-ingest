@@ -1,6 +1,6 @@
 from __future__ import annotations
-import abc
 
+import abc
 import dataclasses
 from typing import Any
 
@@ -41,9 +41,7 @@ class Record(abc.ABC):
     def set_options(self, data: dict[str, Any]):
         fields = {f.name for f in dataclasses.fields(self.options)}
 
-        self.options = Options(
-            **{k: v for k, v in data.items() if k in fields}
-        )
+        self.options = Options(**{k: v for k, v in data.items() if k in fields})
 
 
 @dataclasses.dataclass
@@ -65,8 +63,7 @@ class PackageRecord(TypedRecord):
 
     def ingest(self, context: dict[str, Any]):
         exists = (
-            model.Package.get(self.data.get("id", self.data.get("name")))
-            is not None
+            model.Package.get(self.data.get("id", self.data.get("name"))) is not None
         )
         action = "package_" + (
             "update" if exists and self.options.update_existing else "create"

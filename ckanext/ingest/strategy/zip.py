@@ -1,13 +1,14 @@
 from __future__ import annotations
-from io import BytesIO
 
-import mimetypes
 import logging
-from typing import IO, Any, Iterable, Optional
-from werkzeug.datastructures import FileStorage
+import mimetypes
 import zipfile
-from .base import ParsingStrategy, ParsingExtras
+from io import BytesIO
+from typing import IO, Any, Iterable, Optional
 
+from werkzeug.datastructures import FileStorage
+
+from .base import ParsingExtras, ParsingStrategy
 
 log = logging.getLogger(__name__)
 

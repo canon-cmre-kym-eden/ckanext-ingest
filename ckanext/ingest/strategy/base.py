@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import re
 import abc
 import logging
+import re
+from typing import IO, Any, Callable, ClassVar, Iterable, Optional
+
+from typing_extensions import TypedDict
 from werkzeug.datastructures import FileStorage
 
 from ..record import Record
-
-from typing import IO, Any, Callable, ClassVar, Iterable, Optional
-from typing_extensions import TypedDict
 
 log = logging.getLogger(__name__)
 CASE_SWAP = re.compile("(?<=[a-z0-9])(?=[A-Z])")
@@ -25,9 +25,7 @@ class Handler:
         self.data = None
         self.strategy = strategy
 
-    def parse(
-        self, source: FileStorage, extras: Optional[ParsingExtras] = None
-    ):
+    def parse(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
         return self.strategy.extract(source, extras)
 
 

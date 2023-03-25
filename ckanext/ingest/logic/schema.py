@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import magic
-import mimetypes
 import cgi
+import mimetypes
 
+import magic
 from werkzeug.datastructures import FileStorage
 
 import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
+
 from .. import artifact
 
 

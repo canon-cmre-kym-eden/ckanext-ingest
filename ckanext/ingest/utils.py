@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import ckan.plugins.toolkit as tk
 
 CONFIG_BASE_TEMPLATE = "ckanext.ingest.base_template"

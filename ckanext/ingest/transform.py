@@ -1,8 +1,12 @@
 from __future__ import annotations
+
 import dataclasses
 from typing import Any, NamedTuple, Optional, Union
+
 from typing_extensions import TypeAlias
+
 import ckan.plugins.toolkit as tk
+
 from ckanext.scheming.validation import validators_from_string
 
 TransformationSchema: TypeAlias = "dict[str, Rules]"
@@ -51,17 +55,13 @@ def _get_transformation_schema(
     fields = f"{fieldset}_fields"
 
     return {
-        f["field_name"]: Rules(
-            Options(**(f[f"{profile}_options"] or {})), f, schema
-        )
+        f["field_name"]: Rules(Options(**(f[f"{profile}_options"] or {})), f, schema)
         for f in schema[fields]
         if "ingest_options" in f
     }
 
 
-def _transform(
-    data: dict[str, Any], schema: TransformationSchema
-) -> dict[str, Any]:
+def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, Any]:
     result = {}
 
     for field, rules in schema.items():
