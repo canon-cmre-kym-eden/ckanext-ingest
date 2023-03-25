@@ -12,7 +12,6 @@ ingest = Blueprint("ingest", __name__)
 
 
 def get_blueprints():
-
     return [ingest]
 
 
@@ -48,7 +47,9 @@ class IngestView(MethodView):
                 tk.h.flash_success(
                     "Success: <a href='{url}'>{title}</a>".format(
                         title=pkg["title"],
-                        url=tk.h.url_for(pkg["type"] + ".read", id=pkg["name"]),
+                        url=tk.h.url_for(
+                            pkg["type"] + ".read", id=pkg["name"]
+                        ),
                     ),
                     True,
                 )
@@ -61,4 +62,6 @@ class IngestView(MethodView):
         return self._render(errors), 409
 
 
-ingest.add_url_rule("/ingest/from-source", view_func=IngestView.as_view("index"))
+ingest.add_url_rule(
+    "/ingest/from-source", view_func=IngestView.as_view("index")
+)

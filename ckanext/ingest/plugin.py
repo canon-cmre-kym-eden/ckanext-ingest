@@ -42,7 +42,9 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     def configure(self, config_):
         strategy.strategies.reset()
-        whitelist = tk.aslist(tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST))
+        whitelist = tk.aslist(
+            tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST)
+        )
         for plugin in plugins.PluginImplementations(interfaces.IIngest):
             items = plugin.get_ingest_strategies()
             if whitelist:

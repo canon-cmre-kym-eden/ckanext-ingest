@@ -1,4 +1,3 @@
-
 import mimetypes
 import os
 from typing import Optional
@@ -7,12 +6,11 @@ import pytest
 from ckan.tests.helpers import call_action
 import ckan.plugins.toolkit as tk
 
+
 @pytest.fixture(scope="session")
 def source():
-    data = os.path.join(
-        os.path.dirname(__file__),
-        "data"
-    )
+    data = os.path.join(os.path.dirname(__file__), "data")
+
     def reader(filename: str, mime: Optional[str] = None):
         if mime is None:
             mime, _enc = mimetypes.guess_type(filename)
@@ -23,37 +21,45 @@ def source():
     return reader
 
 
-
 class TestExtractRecords:
-    @pytest.mark.parametrize("filename", ["example.csv", "example.zip", "zipped_zip.zip"])
+    @pytest.mark.parametrize(
+        "filename", ["example.csv", "example.zip", "zipped_zip.zip"]
+    )
     def test_basic(self, source, filename):
-        records = call_action("ingest_extract_records", source=source(filename))
-        assert records == [{'name': 'hello', 'title': 'Hello', 'type': 'dataset'},
-                           {'name': 'world', 'title': 'World', 'type': 'dataset'}]
+        records = call_action(
+            "ingest_extract_records", source=source(filename)
+        )
+        assert records == [
+            {"name": "hello", "title": "Hello", "type": "dataset"},
+            {"name": "world", "title": "World", "type": "dataset"},
+        ]
 
     def test_no_source(self, source):
         with pytest.raises(tk.ValidationError):
             call_action("ingest_extract_records")
 
     def test_unmapped(self, source):
-        records = call_action("ingest_extract_records", source=source("unmapped.csv"))
-        assert records == [{'type': 'dataset'},
-                           {'type': 'dataset'}]
-
+        records = call_action(
+            "ingest_extract_records", source=source("unmapped.csv")
+        )
+        assert records == [{"type": "dataset"}, {"type": "dataset"}]
 
 
 @pytest.mark.usefixtures("clean_db")
 class TestImportRecords:
-    @pytest.mark.parametrize("filename", ["example.csv", "example.zip", "zipped_zip.zip"])
+    @pytest.mark.parametrize(
+        "filename", ["example.csv", "example.zip", "zipped_zip.zip"]
+    )
     def test_basic(self, source, filename):
         result = call_action("ingest_import_records", source=source(filename))
         assert result == {"fail": 0, "success": 2}
-
 
     def test_no_source(self, source):
         with pytest.raises(tk.ValidationError):
             call_action("ingest_import_records")
 
     def test_unmapped(self, source):
-        result = call_action("ingest_import_records", source=source("unmapped.csv"))
+        result = call_action(
+            "ingest_import_records", source=source("unmapped.csv")
+        )
         assert result == {"fail": 2, "success": 0}

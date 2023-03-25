@@ -21,7 +21,9 @@ class ZipStrategy(ParsingStrategy):
                 return archive.open(name)
             except KeyError:
                 log.warning(
-                    "File %s not found in the archive %s", name, archive.filename
+                    "File %s not found in the archive %s",
+                    name,
+                    archive.filename,
                 )
 
         return locator

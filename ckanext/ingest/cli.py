@@ -40,7 +40,9 @@ def supported():
     help="The form of processing report",
 )
 @click.option("--start", type=int, default=0, help="Number of items to skip")
-@click.option("--rows", type=int, help="Number of items to process(all by default)")
+@click.option(
+    "--rows", type=int, help="Number of items to process(all by default)"
+)
 @click.option(
     "-d",
     "--defaults",
@@ -94,7 +96,9 @@ def process(
                 "rows": rows,
                 "update_existing": True,
                 "defaults": dict(pair for pair in defaults if len(pair) == 2),
-                "overrides": dict(pair for pair in overrides if len(pair) == 2),
+                "overrides": dict(
+                    pair for pair in overrides if len(pair) == 2
+                ),
                 "extras": dict(pair for pair in extras if len(pair) == 2),
             },
         )

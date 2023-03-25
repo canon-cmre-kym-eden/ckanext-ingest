@@ -50,7 +50,10 @@ def import_records(context, data_dict):
             artifacts.fail({"error": e.error_dict, "source": record.raw})
         except tk.ObjectNotFound as e:
             artifacts.fail(
-                {"error": e.message or "Package does not exists", "source": record.raw}
+                {
+                    "error": e.message or "Package does not exists",
+                    "source": record.raw,
+                }
             )
 
         else:

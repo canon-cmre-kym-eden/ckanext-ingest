@@ -25,7 +25,9 @@ class Handler:
         self.data = None
         self.strategy = strategy
 
-    def parse(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
+    def parse(
+        self, source: FileStorage, extras: Optional[ParsingExtras] = None
+    ):
         return self.strategy.extract(source, extras)
 
 

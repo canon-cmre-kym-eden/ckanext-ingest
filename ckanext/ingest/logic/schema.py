@@ -53,7 +53,14 @@ def import_records(
 
 
 @validator_args
-def extract_records(not_missing, default, natural_number_validator, ignore_missing, convert_to_json_if_string, dict_only):
+def extract_records(
+    not_missing,
+    default,
+    natural_number_validator,
+    ignore_missing,
+    convert_to_json_if_string,
+    dict_only,
+):
     return {
         "source": [not_missing, uploaded_file],
         "extras": [default("{}"), convert_to_json_if_string, dict_only],

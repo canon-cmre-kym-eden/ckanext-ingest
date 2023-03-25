@@ -12,6 +12,7 @@ from . import transform
 CONFIG_ALLOW_TRANSFER = "ckanext.ingest.allow_resource_transfer"
 DEFAULT_ALLOW_TRANSFER = False
 
+
 @dataclasses.dataclass
 class Options:
     update_existing: bool = False
@@ -40,7 +41,9 @@ class Record(abc.ABC):
     def set_options(self, data: dict[str, Any]):
         fields = {f.name for f in dataclasses.fields(self.options)}
 
-        self.options = Options(**{k: v for k, v in data.items() if k in fields})
+        self.options = Options(
+            **{k: v for k, v in data.items() if k in fields}
+        )
 
 
 @dataclasses.dataclass
@@ -62,7 +65,8 @@ class PackageRecord(TypedRecord):
 
     def ingest(self, context: dict[str, Any]):
         exists = (
-            model.Package.get(self.data.get("id", self.data.get("name"))) is not None
+            model.Package.get(self.data.get("id", self.data.get("name")))
+            is not None
         )
         action = "package_" + (
             "update" if exists and self.options.update_existing else "create"
@@ -90,13 +94,21 @@ class ResourceRecord(TypedRecord):
         existing = model.Resource.get(self.data.get("id", ""))
         exists = existing and existing.state == "active"
 
-        allow_transfer = tk.asbool(tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER))
+        allow_transfer = tk.asbool(
+            tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER)
+        )
         if exists and existing.package_id != self.data.get("package_id"):
             if allow_transfer:
                 exists = False
             else:
-                raise tk.ValidationError({"id": f"Resource already belogns to the package {existing.package_id}"})
-
+                raise tk.ValidationError(
+                    {
+                        "id": (
+                            "Resource already belogns to the package"
+                            f" {existing.package_id}"
+                        )
+                    }
+                )
 
         action = "resource_" + (
             "update" if exists and self.options.update_existing else "create"

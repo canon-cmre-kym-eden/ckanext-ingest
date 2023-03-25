@@ -15,18 +15,26 @@ log = logging.getLogger(__name__)
 
 
 class SeedExcelStrategy(ParsingStrategy):
-    mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+    mimetypes = {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
 
-    def extract(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
+    def extract(
+        self, source: FileStorage, extras: Optional[ParsingExtras] = None
+    ):
         from openpyxl import load_workbook
 
-        doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
+        doc = load_workbook(
+            BytesIO(source.read()), read_only=True, data_only=True
+        )
 
         md_name = "Dataset Metadata"
         res_name = "Resources"
         if md_name not in doc or res_name not in doc:
             log.warning(
-                "Excel document does not contain '%s' or '%s' sheet", md_name, res_name
+                "Excel document does not contain '%s' or '%s' sheet",
+                md_name,
+                res_name,
             )
             return
 
@@ -36,7 +44,9 @@ class SeedExcelStrategy(ParsingStrategy):
         rows = metadata_sheet.iter_rows(row_offset=1)
         data_dict = PackageRecord(_prepare_data_dict(rows))
         if not data_dict.data.get("name"):
-            data_dict.data["name"] = munge.munge_title_to_name(data_dict.data["title"])
+            data_dict.data["name"] = munge.munge_title_to_name(
+                data_dict.data["title"]
+            )
 
         yield data_dict
 
@@ -62,7 +72,9 @@ class SeedExcelStrategy(ParsingStrategy):
             elif extras and "file_locator" in extras:
                 fp = extras["file_locator"](resource_from)
                 if not fp:
-                    log.warning("Cannot locate file for resource %s", resource_title)
+                    log.warning(
+                        "Cannot locate file for resource %s", resource_title
+                    )
                     continue
                 payload = {
                     "package_id": data_dict.data["name"],
@@ -76,7 +88,9 @@ class SeedExcelStrategy(ParsingStrategy):
                 }
 
             else:
-                log.warning("Cannot determine source filesystem of %s", resource_title)
+                log.warning(
+                    "Cannot determine source filesystem of %s", resource_title
+                )
                 continue
 
             yield ResourceRecord(payload)
