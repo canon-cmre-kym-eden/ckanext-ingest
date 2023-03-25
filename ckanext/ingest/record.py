@@ -56,9 +56,10 @@ class TypedRecord(Record):
 @dataclasses.dataclass
 class PackageRecord(TypedRecord):
     type: str = "dataset"
+    profile: str = "ingest"
 
     def transform(self, raw):
-        data = transform.transform_package(raw, self.type)
+        data = transform.transform_package(raw, self.type, self.profile)
         return data
 
     def ingest(self, context: dict[str, Any]):
@@ -82,9 +83,10 @@ class PackageRecord(TypedRecord):
 @dataclasses.dataclass
 class ResourceRecord(TypedRecord):
     type: str = "dataset"
+    profile: str = "ingest"
 
     def transform(self, raw):
-        data = transform.transform_resource(raw, self.type)
+        data = transform.transform_resource(raw, self.type, self.profile)
         return data
 
     def ingest(self, context: dict[str, Any]):
