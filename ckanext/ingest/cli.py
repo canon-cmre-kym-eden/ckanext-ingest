@@ -30,4 +30,4 @@ def list_strategies():
     """List supported input strategies and corresponding mimetypes."""
     for name, strategy in strategies.items():
         click.secho(f"{name} [{strategy.__module__}:{strategy.__name__}]:", bold=True)
-        click.echo(textwrap.indent(pydoc.getdoc(strategy), "\t"))
+        click.echo(textwrap.indent(pydoc.getdoc(strategy) + "\n", "\t"))

@@ -1,23 +1,34 @@
+"""This module was written as a PoC for SEED data portal.
+
+In current state this SeedExcelStrategy has no sense. But I hope that I find
+resources to rewrite it and create a proper base XLSX strategy.
+
+"""
 from __future__ import annotations
 
 import logging
 from io import BytesIO
 from typing import Any
 
-from werkzeug.datastructures import FileStorage
-
 from ckan.lib import munge
 
 from ckanext.ingest.record import PackageRecord, ResourceRecord
-from ckanext.ingest.shared import StrategyOptions, ParsingStrategy
+from ckanext.ingest.shared import (
+    StrategyOptions,
+    ParsingStrategy,
+    Storage,
+    make_file_storage,
+)
 
 log = logging.getLogger(__name__)
 
 
 class SeedExcelStrategy(ParsingStrategy):
+    """Extractor for SEED data portal.
+    """
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
-    def extract(self, source: FileStorage, options: StrategyOptions | None = None):
+    def extract(self, source: Storage, options: StrategyOptions | None = None):
         from openpyxl import load_workbook
 
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
@@ -74,7 +85,7 @@ class SeedExcelStrategy(ParsingStrategy):
                     "name": resource_title,
                     "description": resource_desc,
                     "url_type": "upload",
-                    "upload": FileStorage(fp, resource_from),
+                    "upload": make_file_storage(fp, resource_from),
                 }
 
             else:

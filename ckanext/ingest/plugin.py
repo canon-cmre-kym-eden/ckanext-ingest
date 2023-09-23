@@ -47,10 +47,9 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     # IIngest
     def get_ingest_strategies(self) -> dict[str, type[shared.ParsingStrategy]]:
-        from .strategy import csv, xlsx, zip
+        from .strategy import csv, zip
 
         return {
-            "zip": zip.ZipStrategy,
-            "seed_xlsx": xlsx.SeedExcelStrategy,
-            "csv": csv.CsvStrategy,
+            "ingest:recursive_zip": zip.ZipStrategy,
+            "ingest:scheming_csv": csv.CsvStrategy,
         }

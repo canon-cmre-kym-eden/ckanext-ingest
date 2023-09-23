@@ -7,7 +7,6 @@ from typing import Any
 from ckan import types
 
 import magic
-from werkzeug.datastructures import FileStorage
 
 import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
@@ -16,8 +15,8 @@ from ckanext.ingest import artifact, shared
 
 
 def into_uploaded_file(value: Any):
-    """Try converting value into FileStorage object"""
-    if isinstance(value, FileStorage):
+    """Try converting value into shared.Storage object"""
+    if isinstance(value, shared.Storage):
         return value
 
     if isinstance(value, cgi.FieldStorage):
@@ -29,7 +28,7 @@ def into_uploaded_file(value: Any):
             mime = magic.from_buffer(value.file.read(1024), True)
             value.file.seek(0)
 
-        return FileStorage(value.file, value.filename, content_type=mime)
+        return shared.make_file_storage(value.file, value.filename, mime)
 
     if isinstance(value, str):
         value = value.encode()
@@ -38,7 +37,7 @@ def into_uploaded_file(value: Any):
         stream = BytesIO(value)
         mime = magic.from_buffer(stream.read(1024), True)
         stream.seek(0)
-        return FileStorage(stream, content_type=mime)
+        return shared.make_file_storage(stream, mimetype=mime)
 
     msg = f"Unsupported source type: {type(value)}"
     raise tk.Invalid(msg)

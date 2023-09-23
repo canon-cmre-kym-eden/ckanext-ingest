@@ -3,10 +3,11 @@ import os
 from typing import Optional
 
 import pytest
-from werkzeug.datastructures import FileStorage
 
 import ckan.plugins.toolkit as tk
 from ckan.tests.helpers import call_action
+
+from ckanext.ingest import shared
 
 
 @pytest.fixture(scope="session")
@@ -18,7 +19,7 @@ def source():
             mime, _enc = mimetypes.guess_type(filename)
 
         src = open(os.path.join(data, filename), "rb")  # noqa
-        return FileStorage(src, content_type=mime)
+        return shared.make_file_storage(src, mimetype=mime)
 
     return reader
 

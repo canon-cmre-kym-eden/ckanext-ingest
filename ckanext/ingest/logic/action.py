@@ -8,7 +8,6 @@ from ckan import types
 
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
-from werkzeug.datastructures import FileStorage
 
 from ckanext.ingest.artifact import make_artifacts
 from . import schema
@@ -67,7 +66,7 @@ def _iter_records(data_dict: dict[str, Any]) -> Iterable[shared.Record]:
     depending on `source`'s mimetype.
 
     """
-    source: FileStorage = data_dict["source"]
+    source: shared.Storage = data_dict["source"]
 
     if "strategy" in data_dict:
         parser = shared.strategies[data_dict["strategy"]]()
