@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import cgi
+from io import BytesIO
 import mimetypes
 from typing import Any
 from ckan import types
@@ -11,10 +12,11 @@ from werkzeug.datastructures import FileStorage
 import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
 
-from ckanext.ingest import artifact
+from ckanext.ingest import artifact, shared
 
 
-def uploaded_file(value: Any):
+def into_uploaded_file(value: Any):
+    """Try converting value into FileStorage object"""
     if isinstance(value, FileStorage):
         return value
 
@@ -29,14 +31,38 @@ def uploaded_file(value: Any):
 
         return FileStorage(value.file, value.filename, content_type=mime)
 
-    msg = f"Unsupported upload type {type(value)}"
+    if isinstance(value, str):
+        value = value.encode()
+
+    if isinstance(value, bytes):
+        stream = BytesIO(value)
+        mime = magic.from_buffer(stream.read(1024), True)
+        stream.seek(0)
+        return FileStorage(stream, content_type=mime)
+
+    msg = f"Unsupported source type: {type(value)}"
     raise tk.Invalid(msg)
 
 
 @validator_args
-def import_records(
+def extract_records(
     not_missing: types.Validator,
-    boolean_validator: types.Validator,
+    default: types.ValidatorFactory,
+    one_of: types.ValidatorFactory,
+    convert_to_json_if_string: types.Validator,
+    dict_only: types.Validator,
+    ignore_missing: types.Validator,
+) -> types.Schema:
+    return {
+        "source": [not_missing, into_uploaded_file],
+        "strategy": [ignore_missing, one_of(shared.strategies.keys())],
+
+        "options": [default('{"record_options": {}}'), convert_to_json_if_string, dict_only],
+    }
+
+
+@validator_args
+def import_records(
     default: types.ValidatorFactory,
     convert_to_json_if_string: types.Validator,
     dict_only: types.Validator,
@@ -44,27 +70,13 @@ def import_records(
     natural_number_validator: types.Validator,
     ignore_missing: types.Validator,
 ) -> types.Schema:
-    return {
-        "source": [not_missing, uploaded_file],
+    schema = extract_records()
+    schema.update({
         "report": [default("stats"), one_of([t.name for t in artifact.Type])],
-        "update_existing": [boolean_validator],
-        "verbose": [boolean_validator],
         "defaults": [default("{}"), convert_to_json_if_string, dict_only],
         "overrides": [default("{}"), convert_to_json_if_string, dict_only],
-        "start": [default(0), natural_number_validator],
-        "rows": [ignore_missing, natural_number_validator],
-        "extras": [default("{}"), convert_to_json_if_string, dict_only],
-    }
+        "skip": [default(0), natural_number_validator],
+        "take": [ignore_missing, natural_number_validator],
+    })
 
-
-@validator_args
-def extract_records(
-    not_missing: types.Validator,
-    default: types.ValidatorFactory,
-    convert_to_json_if_string: types.Validator,
-    dict_only: types.Validator,
-) -> types.Schema:
-    return {
-        "source": [not_missing, uploaded_file],
-        "extras": [default("{}"), convert_to_json_if_string, dict_only],
-    }
+    return schema

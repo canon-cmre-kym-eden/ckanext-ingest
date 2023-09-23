@@ -1,125 +1,74 @@
 from __future__ import annotations
 
-import abc
+
 import dataclasses
-from typing import Any, Callable
-from typing_extensions import Self
+from typing import Any
 
 from ckan import model, types
 import ckan.plugins.toolkit as tk
 
-from . import transform
-
-CONFIG_ALLOW_TRANSFER = "ckanext.ingest.allow_resource_transfer"
-DEFAULT_ALLOW_TRANSFER = False
+from . import transform, config, shared
 
 
 @dataclasses.dataclass
-class Options:
-    update_existing: bool = False
-    verbose: bool = False
-
-
-@dataclasses.dataclass
-class Record(abc.ABC):
-    raw: dict[str, Any]
-    data: dict[str, Any] = dataclasses.field(init=False)
-    options: Options = dataclasses.field(default_factory=Options, init=False)
-
-    def __post_init__(self):
-        self.data = self.transform(self.raw)
-
-    def transform(self, raw: Any):
-        return raw
-
-    def fill(self, defaults: dict[str, Any], overrides: dict[str, Any]):
-        self.data = {**defaults, **self.data, **overrides}
-
-    @abc.abstractmethod
-    def ingest(self, context: types.Context) -> Any:
-        pass
-
-    def set_options(self, data: dict[str, Any]):
-        fields = {f.name for f in dataclasses.fields(self.options)}
-
-        self.options = Options(**{k: v for k, v in data.items() if k in fields})
-
-
-@dataclasses.dataclass
-class TypedRecord(Record):
-    type: str
-
-    @classmethod
-    def type_factory(cls, type_: str, **partial: Any) -> Callable[..., Self]:
-        return lambda *a, **k: cls(*a, type=type_, **{**k, **partial})
-
-
-@dataclasses.dataclass
-class PackageRecord(TypedRecord):
+class PackageRecord(shared.Record):
     type: str = "dataset"
     profile: str = "ingest"
 
     def transform(self, raw: Any):
         return transform.transform_package(raw, self.type, self.profile)
 
-    def ingest(self, context: types.Context) -> Any:
-        exists = (
-            model.Package.get(self.data.get("id", self.data.get("name"))) is not None
-        )
+    def ingest(self, context: types.Context) -> shared.IngestionResult:
+        id_or_name = self.data.get("id", self.data.get("name"))
+        pkg = model.Package.get(id_or_name)
+
         action = "package_" + (
-            "update" if exists and self.options.update_existing else "create"
+            "update" if pkg and self.options.get("update_existing") else "create"
         )
         result = tk.get_action(action)(context, self.data)
-        if self.options.verbose:
-            return result
 
         return {
-            "id": result["id"],
-            "type": result["type"],
-            "action": action,
+            "success": True,
+            "result": result,
+            "details": {"action": action},
         }
 
 
 @dataclasses.dataclass
-class ResourceRecord(TypedRecord):
+class ResourceRecord(shared.Record):
     type: str = "dataset"
     profile: str = "ingest"
 
     def transform(self, raw: Any):
         return transform.transform_resource(raw, self.type, self.profile)
 
-    def ingest(self, context: types.Context) -> Any:
+    def ingest(self, context: types.Context) -> shared.IngestionResult:
         existing = model.Resource.get(self.data.get("id", ""))
-        if not existing:
-            raise tk.ObjectNotFound("resource")
+        prefer_update = existing and existing.state == "active"
 
-        exists = existing.state == "active"
 
-        allow_transfer = tk.asbool(
-            tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER),
-        )
-        if exists and existing.package_id != self.data.get("package_id"):
-            if allow_transfer:
-                exists = False
+        if existing and prefer_update and existing.package_id != self.data.get("package_id"):
+            if config.allow_transfer():
+                prefer_update = False
+
             else:
                 raise tk.ValidationError(
                     {
                         "id": (
                             "Resource already belogns to the package"
-                            f" {existing.package_id}"
+                            f" {existing.package_id} and cannot be transfered"
+                            f" to {self.data.get('package_id')}"
                         ),
                     },
                 )
 
         action = "resource_" + (
-            "update" if exists and self.options.update_existing else "create"
+            "update" if prefer_update and self.options.get("update_existing") else "create"
         )
 
         result = tk.get_action(action)(context, self.data)
-        if self.options.verbose:
-            return result
         return {
-            "id": result["id"],
-            "package_id": result["package_id"],
-            "action": action,
+            "success": True,
+            "result": result,
+            "details": {"action": action},
         }

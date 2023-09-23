@@ -8,7 +8,7 @@ from typing import Any, Iterable
 
 from werkzeug.datastructures import FileStorage
 
-from .base import ParsingExtras, ParsingStrategy
+from ckanext.ingest.shared import StrategyOptions, ParsingStrategy
 
 log = logging.getLogger(__name__)
 
@@ -30,19 +30,19 @@ class ZipStrategy(ParsingStrategy):
         return locator
 
     def extract(
-        self, source: FileStorage, extras: ParsingExtras | None = None,
+        self, source: FileStorage, options: StrategyOptions | None = None,
     ) -> Iterable[Any]:
-        from . import get_handler
+        from ckanext.ingest.shared import get_handler_for_mimetype
 
         with zipfile.ZipFile(BytesIO(source.read())) as archive:
             for item in archive.namelist():
                 mime, _encoding = mimetypes.guess_type(item)
-                handler = get_handler(mime, FileStorage(archive.open(item)))
+                handler = get_handler_for_mimetype(mime, FileStorage(archive.open(item)))
                 if not handler:
                     log.debug("Skip %s with MIMEType %s", item, mime)
                     continue
 
-                yield from handler.parse(
+                yield from handler.extract(
                     FileStorage(archive.open(item)),
                     {"file_locator": self._make_locator(archive)},
                 )

@@ -8,7 +8,7 @@ from flask.views import MethodView
 from ckan.lib import base
 import ckan.plugins.toolkit as tk
 
-from . import utils
+from . import config
 
 ingest = Blueprint("ingest", __name__)
 
@@ -24,7 +24,7 @@ class IngestView(MethodView):
         data: dict[str, Any] = {
             "user_dict": tk.g.userobj,
             "errors": errors,
-            "base_template": utils.get_base_template(),
+            "base_template": config.base_template(),
         }
         return base.render("ingest/index.html", extra_vars=data)
 

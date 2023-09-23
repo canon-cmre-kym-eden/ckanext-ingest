@@ -3,15 +3,16 @@ from __future__ import annotations
 import itertools
 import logging
 import mimetypes
-from typing import Any
+from typing import Any, Iterable
 from ckan import types
 
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
+from werkzeug.datastructures import FileStorage
 
-from ckanext.ingest import strategy
 from ckanext.ingest.artifact import make_artifacts
 from . import schema
+from ckanext.ingest import shared
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def ingest_extract_records(
     context: types.Context, data_dict: dict[str, Any],
 ) -> list[dict[str, Any]]:
     tk.check_access("ingest_extract_records", context, data_dict)
-    records = _extract_records(data_dict)
+    records = _iter_records(data_dict)
 
     return [r.data for r in records]
 
@@ -30,19 +31,18 @@ def ingest_extract_records(
 def ingest_import_records(context: types.Context, data_dict: dict[str, Any]):
     tk.check_access("ingest_import_records", context, data_dict)
 
-    start = data_dict.get("start", 0)
-    rows = data_dict.get("rows")
-    if rows is not None:
-        rows += start
+    start = data_dict["skip"]
+    stop = data_dict.get("take")
+    if stop is not None:
+        stop += start
 
     artifacts = make_artifacts(data_dict["report"])
-    records = _extract_records(data_dict)
+    records = _iter_records(data_dict)
 
-    for record in itertools.islice(records, start, rows):
-        record.set_options(data_dict)
+    for record in itertools.islice(records, start, stop):
         record.fill(data_dict["defaults"], data_dict["overrides"])
         try:
-            result = record.ingest({"user": context["user"]})
+            result = record.ingest(tk.fresh_context(context))
         except tk.ValidationError as e:
             artifacts.fail({"error": e.error_dict, "source": record.raw})
         except tk.ObjectNotFound as e:
@@ -59,16 +59,33 @@ def ingest_import_records(context: types.Context, data_dict: dict[str, Any]):
     return artifacts.collect()
 
 
-def _extract_records(data_dict: dict[str, Any]):
-    mime, _encoding = mimetypes.guess_type(data_dict["source"].filename)
-    if not mime:
-        mime = data_dict["source"].content_type
+def _iter_records(data_dict: dict[str, Any]) -> Iterable[shared.Record]:
+    """Produce iterable over all extracted records.
 
-    handler = strategy.get_handler(mime, data_dict["source"])
+    When `strategy` is present in `data_dict`, it explicitly defines extraction
+    strategy. If `strategy` is missing, the most suitable strategy is chosen
+    depending on `source`'s mimetype.
 
-    if not handler:
-        raise tk.ValidationError(
-            {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]},
-        )
+    """
+    source: FileStorage = data_dict["source"]
 
-    return handler.parse(data_dict["source"], data_dict["extras"])
+    if "strategy" in data_dict:
+        parser = shared.strategies[data_dict["strategy"]]()
+
+    else:
+        mime = None
+
+        if source.filename:
+            mime, _encoding = mimetypes.guess_type(source.filename)
+
+        if not mime:
+            mime = data_dict["source"].content_type
+
+        parser = shared.get_handler_for_mimetype(mime, data_dict["source"])
+
+        if not parser:
+            raise tk.ValidationError(
+                {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]},
+            )
+
+    return parser.extract(data_dict["source"], data_dict["options"])

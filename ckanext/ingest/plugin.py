@@ -5,10 +5,7 @@ from ckan import common
 from ckan import plugins
 import ckan.plugins.toolkit as tk
 
-from . import interfaces, strategy
-
-CONFIG_WHITELIST = "ckanext.ingest.strategy.whitelist"
-DEFAULT_WHITELIST = []
+from . import interfaces, shared, config
 
 
 @tk.blanket.auth_functions
@@ -16,6 +13,7 @@ DEFAULT_WHITELIST = []
 @tk.blanket.validators
 @tk.blanket.cli
 @tk.blanket.blueprints
+@tk.blanket.config_declarations
 class IngestPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IConfigurable)
@@ -29,20 +27,30 @@ class IngestPlugin(plugins.SingletonPlugin):
     # IConfigurable
 
     def configure(self, config_: common.CKANConfig):
-        strategy.strategies.reset()
-        whitelist = tk.aslist(tk.config.get(CONFIG_WHITELIST, DEFAULT_WHITELIST))
+        shared.strategies.clear()
+
+        whitelist = config.allowed_strategies()
+        blacklist = config.disabled_strategies()
+        name_mapping = config.name_mapping()
+
         for plugin in plugins.PluginImplementations(interfaces.IIngest):
-            items = plugin.get_ingest_strategies()
-            if whitelist:
-                items = [item for item in items if item.name() in whitelist]
-            strategy.strategies.extend(items)
+            for name, s in plugin.get_ingest_strategies().items():
+                final_name = name_mapping.get(f"{s.__module__}:{s.__name__}", name)
+
+                if whitelist and final_name not in whitelist:
+                    continue
+
+                if final_name in blacklist:
+                    continue
+
+                shared.strategies.update({final_name: s})
 
     # IIngest
-    def get_ingest_strategies(self) -> list[type[strategy.ParsingStrategy]]:
+    def get_ingest_strategies(self) -> dict[str, type[shared.ParsingStrategy]]:
         from .strategy import csv, xlsx, zip
 
-        return [
-            zip.ZipStrategy,
-            xlsx.SeedExcelStrategy,
-            csv.CsvStrategy,
-        ]
+        return {
+            "zip": zip.ZipStrategy,
+            "seed_xlsx": xlsx.SeedExcelStrategy,
+            "csv": csv.CsvStrategy,
+        }

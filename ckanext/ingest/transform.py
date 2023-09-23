@@ -1,31 +1,51 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, NamedTuple
+from typing import Any
 
 from typing_extensions import TypeAlias
 
 import ckan.plugins.toolkit as tk
 
-from ckanext.scheming.validation import validators_from_string
-
-validators_from_string: Any
 TransformationSchema: TypeAlias = "dict[str, Rules]"
 
 
 @dataclasses.dataclass
 class Options:
-    alias: list[str] = dataclasses.field(default_factory=list)
+    """Transformation options taken from `{profile}_options` attribute of field
+    in ckanext-scheming's schema
+
+    These options define how raw value passed into the Record transforms into
+    proper value that is suitable for the entity's schema. Workflow is the
+    following:
+
+    * parse the source
+    * get raw data dict
+    * transform every field defined in metadata schema and available in raw
+      data using Options into
+    * pass transformed data to CKAN API action
+
+    """
+    # names of the field in the raw data
+    aliases: list[str] = dataclasses.field(default_factory=list)
+
+    # transform select label[s] into value[s]
     normalize_choice: bool = False
+
+    # used by `normalize_choice`. Split raw value into multiple values using
+    # given separator
     choice_separator: str = ", "
+
+
     convert: str = ""
 
     def __post_init__(self):
-        if isinstance(self.alias, str):
-            self.alias = [self.alias]
+        if isinstance(self.aliases, str):
+            self.aliases = [self.aliases]
 
 
-class Rules(NamedTuple):
+@dataclasses.dataclass
+class Rules:
     options: Options
     field: dict[str, Any]
     schema: dict[str, Any]
@@ -69,10 +89,13 @@ def _get_transformation_schema(
 
 
 def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, Any]:
+    from ckanext.scheming.validation import validators_from_string
+    validators_from_string: Any
+
     result: dict[str, Any] = {}
 
     for field, rules in schema.items():
-        for k in rules.options.alias or [rules.field["label"]]:
+        for k in rules.options.aliases or [rules.field["field_name"], rules.field["label"]]:
             if k in data:
                 break
         else:

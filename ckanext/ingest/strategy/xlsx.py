@@ -9,7 +9,7 @@ from werkzeug.datastructures import FileStorage
 from ckan.lib import munge
 
 from ckanext.ingest.record import PackageRecord, ResourceRecord
-from .base import ParsingExtras, ParsingStrategy
+from ckanext.ingest.shared import StrategyOptions, ParsingStrategy
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class SeedExcelStrategy(ParsingStrategy):
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
-    def extract(self, source: FileStorage, extras: ParsingExtras | None = None):
+    def extract(self, source: FileStorage, options: StrategyOptions | None = None):
         from openpyxl import load_workbook
 
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
@@ -61,8 +61,8 @@ class SeedExcelStrategy(ParsingStrategy):
                     "format": resource_format,
                     "description": resource_desc,
                 }
-            elif extras and "file_locator" in extras:
-                fp = extras["file_locator"](resource_from)
+            elif options and "file_locator" in options:
+                fp = options["file_locator"](resource_from)
                 if not fp:
                     log.warning("Cannot locate file for resource %s", resource_title)
                     continue
