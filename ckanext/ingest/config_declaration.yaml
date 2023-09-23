@@ -1,0 +1,31 @@
+version: 1
+groups:
+  - annotation: ckanext-ingest
+    options:
+
+      - key: ckanext.ingest.strategy.allowed
+        type: list
+        description: |
+          List of allowed ingestion strategies. If empty, all registered
+          strategies are allowed
+
+      - key: ckanext.ingest.strategy.disabled
+        type: list
+        description: |
+          List of disabled ingestion strategies.
+
+      - key: ckanext.ingest.base_template
+        default: page.html
+        description: |
+          Base template for WebUI
+
+      - key: ckanext.ingest.allow_resource_transfer
+        type: bool
+        description: |
+          Allow moving existing resources between packages.
+
+      - key: ckanext.ingest.strategy.name_mapping
+        validators: default({}) convert_to_json_if_string dict_only
+        description: |
+          Rename strategies using `{"import.path.of:StrategyClass":
+          "new_name"}` JSON object
