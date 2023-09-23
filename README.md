@@ -78,3 +78,26 @@ To run the tests and produce a coverage report, first make sure you have
 coverage installed in your virtualenv (``pip install coverage``) then run::
 
     nosetests --nologcapture --with-pylons=test.ini --with-coverage --cover-package=ckanext.ingest --cover-inclusive --cover-erase --cover-tests
+# List of allowed ingestion strategies. If empty, all registered strategies
+# are allowed
+# (optional, default: )
+ckanext.ingest.strategy.allowed = 
+
+# List of disabled ingestion strategies.
+# (optional, default: )
+ckanext.ingest.strategy.disabled = 
+
+# Base template for WebUI
+# (optional, default: page.html)
+ckanext.ingest.base_template = page.html
+
+# Allow moving existing resources between packages.
+# (optional, default: false)
+ckanext.ingest.allow_resource_transfer = false
+
+# Rename strategies using `{"import.path.of:StrategyClass": "new_name"}` JSON
+# object
+# (optional, default: )
+ckanext.ingest.strategy.name_mapping = 
+
+
