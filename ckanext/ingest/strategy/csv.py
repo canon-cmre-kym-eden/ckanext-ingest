@@ -4,9 +4,8 @@ import csv
 import logging
 from io import StringIO
 
-
 from ckanext.ingest.record import PackageRecord
-from ckanext.ingest.shared import StrategyOptions, ParsingStrategy, Storage
+from ckanext.ingest.shared import ParsingStrategy, Storage, StrategyOptions
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ class CsvStrategy(ParsingStrategy):
     will be used as a data source for this field.
 
     """
+
     mimetypes = {"text/csv"}
     record_factory = PackageRecord
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 from typing import Any
-from ckan.logic import parse_params
 
 from flask import Blueprint
 from flask.views import MethodView
 
-from ckan.lib import base
 import ckan.plugins.toolkit as tk
+from ckan.lib import base
+from ckan.logic import parse_params
 
 from . import config
 

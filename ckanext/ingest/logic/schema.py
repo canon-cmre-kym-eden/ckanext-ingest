@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import cgi
-from io import BytesIO
 import mimetypes
+from io import BytesIO
 from typing import Any
-from ckan import types
 
 import magic
 
 import ckan.plugins.toolkit as tk
+from ckan import types
 from ckan.logic.schema import validator_args
 
 from ckanext.ingest import artifact, shared
@@ -55,8 +55,11 @@ def extract_records(
     return {
         "source": [not_missing, into_uploaded_file],
         "strategy": [ignore_missing, one_of(shared.strategies.keys())],
-
-        "options": [default('{"record_options": {}}'), convert_to_json_if_string, dict_only],
+        "options": [
+            default('{"record_options": {}}'),
+            convert_to_json_if_string,
+            dict_only,
+        ],
     }
 
 
@@ -70,12 +73,14 @@ def import_records(
     ignore_missing: types.Validator,
 ) -> types.Schema:
     schema = extract_records()
-    schema.update({
-        "report": [default("stats"), one_of([t.name for t in artifact.Type])],
-        "defaults": [default("{}"), convert_to_json_if_string, dict_only],
-        "overrides": [default("{}"), convert_to_json_if_string, dict_only],
-        "skip": [default(0), natural_number_validator],
-        "take": [ignore_missing, natural_number_validator],
-    })
+    schema.update(
+        {
+            "report": [default("stats"), one_of([t.name for t in artifact.Type])],
+            "defaults": [default("{}"), convert_to_json_if_string, dict_only],
+            "overrides": [default("{}"), convert_to_json_if_string, dict_only],
+            "skip": [default(0), natural_number_validator],
+            "take": [ignore_missing, natural_number_validator],
+        },
+    )
 
     return schema

@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Any
 
 import uuid
+from typing import Any
 
 from ckan.lib import munge
-
 
 NAMESPACE_INGEST = uuid.uuid5(uuid.NAMESPACE_DNS, "ingest")
 

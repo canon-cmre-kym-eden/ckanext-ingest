@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from ckan import common
-
-from ckan import plugins
 import ckan.plugins.toolkit as tk
+from ckan import common, plugins
 
-from . import interfaces, shared, config
+from . import config, interfaces, shared
 
 
 @tk.blanket.auth_functions

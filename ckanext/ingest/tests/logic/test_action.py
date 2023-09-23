@@ -26,7 +26,8 @@ def source():
 
 class TestExtractRecords:
     @pytest.mark.parametrize(
-        "filename", ["example.csv", "example.zip", "zipped_zip.zip"],
+        "filename",
+        ["example.csv", "example.zip", "zipped_zip.zip"],
     )
     def test_basic(self, source, filename):
         records = call_action("ingest_extract_records", source=source(filename))
@@ -48,7 +49,8 @@ class TestExtractRecords:
 @pytest.mark.usefixtures("clean_db")
 class TestImportRecords:
     @pytest.mark.parametrize(
-        "filename", ["example.csv", "example.zip", "zipped_zip.zip"],
+        "filename",
+        ["example.csv", "example.zip", "zipped_zip.zip"],
     )
     def test_basic(self, source, filename):
         result = call_action("ingest_import_records", source=source(filename))

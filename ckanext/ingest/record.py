@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-
 import dataclasses
 from typing import Any
 
-from ckan import model, types
 import ckan.plugins.toolkit as tk
+from ckan import model, types
 
-from . import transform, config, shared
+from . import config, shared, transform
 
 
 @dataclasses.dataclass

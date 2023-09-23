@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import pydoc
 import textwrap
-import click
 
+import click
 
 from .shared import strategies
 

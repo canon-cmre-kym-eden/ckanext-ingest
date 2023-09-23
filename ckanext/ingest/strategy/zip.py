@@ -1,7 +1,8 @@
 from __future__ import annotations
-import os
+
 import logging
 import mimetypes
+import os
 import zipfile
 from io import BytesIO
 from typing import Iterable
@@ -19,6 +20,7 @@ class ZipStrategy(shared.ParsingStrategy):
     same manner as a top-level archive.
 
     """
+
     mimetypes = {"application/zip"}
 
     def _make_locator(self, archive: zipfile.ZipFile):
@@ -45,7 +47,7 @@ class ZipStrategy(shared.ParsingStrategy):
                 handler = shared.get_handler_for_mimetype(
                     mime,
                     shared.make_file_storage(
-                        archive.open(item), os.path.basename(item), mime
+                        archive.open(item), os.path.basename(item), mime,
                     ),
                 )
                 if not handler:

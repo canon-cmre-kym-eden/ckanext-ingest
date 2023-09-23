@@ -1,18 +1,20 @@
 from __future__ import annotations
-from ckan import types
 
-import logging
 import dataclasses
+import logging
 from typing import IO, Any, Callable, ClassVar, Iterable
 
 from typing_extensions import TypedDict
 from werkzeug.datastructures import FileStorage
+
+from ckan import types
 
 log = logging.getLogger(__name__)
 
 strategies: dict[str, type[ParsingStrategy]] = {}
 
 Storage = FileStorage
+
 
 class RecordOptions(TypedDict, total=False):
     """Options for Record extracted by Strategy."""
@@ -34,6 +36,7 @@ class StrategyOptions(TypedDict, total=False):
     # refer files in archive when creating a resource record with uploaded
     # file, for example.
     file_locator: Callable[[str], IO[bytes] | None]
+
 
 class IngestionResult(TypedDict, total=False):
     """Outcome of the record ingestion."""
@@ -109,7 +112,7 @@ class ParsingStrategy:
 
     def chunk_into_record(self, chunk: Any, options: StrategyOptions):
         return self.record_factory(
-            chunk, options.get("record_options", StrategyOptions())
+            chunk, options.get("record_options", StrategyOptions()),
         )
 
     def extract(
@@ -129,7 +132,7 @@ class ParsingStrategy:
 
 
 def get_handler_for_mimetype(
-    mime: str | None, source: Storage
+    mime: str | None, source: Storage,
 ) -> ParsingStrategy | None:
     """Select the most suitable handler for the MIMEType.
 
@@ -154,6 +157,6 @@ def get_handler_for_mimetype(
 
 
 def make_file_storage(
-    stream: IO[bytes], name: str | None = None, mimetype: str | None = None
+    stream: IO[bytes], name: str | None = None, mimetype: str | None = None,
 ):
     return Storage(stream, name, content_type=mimetype)

@@ -4,21 +4,23 @@ import itertools
 import logging
 import mimetypes
 from typing import Any, Iterable
-from ckan import types
 
 import ckan.plugins.toolkit as tk
+from ckan import types
 from ckan.logic import validate
 
-from ckanext.ingest.artifact import make_artifacts
-from . import schema
 from ckanext.ingest import shared
+from ckanext.ingest.artifact import make_artifacts
+
+from . import schema
 
 log = logging.getLogger(__name__)
 
 
 @validate(schema.extract_records)
 def ingest_extract_records(
-    context: types.Context, data_dict: dict[str, Any],
+    context: types.Context,
+    data_dict: dict[str, Any],
 ) -> list[dict[str, Any]]:
     tk.check_access("ingest_extract_records", context, data_dict)
     records = _iter_records(data_dict)
