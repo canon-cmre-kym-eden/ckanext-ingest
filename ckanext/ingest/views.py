@@ -1,18 +1,16 @@
 from __future__ import annotations
+from typing import Any
+from ckan.logic import parse_params
 
 from flask import Blueprint
 from flask.views import MethodView
 
-import ckan.lib.base as base
+from ckan.lib import base
 import ckan.plugins.toolkit as tk
 
 from . import utils
 
 ingest = Blueprint("ingest", __name__)
-
-
-def get_blueprints():
-    return [ingest]
 
 
 class IngestView(MethodView):
@@ -22,8 +20,8 @@ class IngestView(MethodView):
         except tk.NotAuthorized:
             tk.abort(401, tk._("Unauthorized to ingest data"))
 
-    def _render(self, errors=None):
-        data = {
+    def _render(self, errors: dict[str, Any] | None = None):
+        data: dict[str, Any] = {
             "user_dict": tk.g.userobj,
             "errors": errors,
             "base_template": utils.get_base_template(),
@@ -38,8 +36,8 @@ class IngestView(MethodView):
         self._check_access()
 
         try:
-            data = dict(tk.request.form)
-            data.update(tk.request.files)
+            data = parse_params(tk.request.form)
+            data.update(parse_params(tk.request.files))
             result = tk.get_action("ingest_import_records")({}, data)
 
             for id_ in result:

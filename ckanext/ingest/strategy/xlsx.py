@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 from io import BytesIO
-from typing import IO, Optional
+from typing import Any
 
 from werkzeug.datastructures import FileStorage
 
-import ckan.lib.munge as munge
+from ckan.lib import munge
 
-from ..record import PackageRecord, ResourceRecord
+from ckanext.ingest.record import PackageRecord, ResourceRecord
 from .base import ParsingExtras, ParsingStrategy
 
 log = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class SeedExcelStrategy(ParsingStrategy):
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
-    def extract(self, source: FileStorage, extras: Optional[ParsingExtras] = None):
+    def extract(self, source: FileStorage, extras: ParsingExtras | None = None):
         from openpyxl import load_workbook
 
         doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
@@ -35,18 +35,18 @@ class SeedExcelStrategy(ParsingStrategy):
         metadata_sheet = doc[md_name]
         resources_sheet = doc[res_name]
 
-        rows = metadata_sheet.iter_rows(row_offset=1)
+        rows: Any = metadata_sheet.iter_rows(min_row=1)
         data_dict = PackageRecord(_prepare_data_dict(rows))
         if not data_dict.data.get("name"):
             data_dict.data["name"] = munge.munge_title_to_name(data_dict.data["title"])
 
         yield data_dict
 
-        for row in resources_sheet.iter_rows(row_offset=1):
+        for row in resources_sheet.iter_rows(min_row=1):
             if not row[0].value:
                 continue
             resource_title = row[0].value
-            resource_from = row[1].value
+            resource_from: Any = row[1].value
             resource_format = row[2].value
             resource_desc = row[3].value
 
@@ -54,7 +54,7 @@ class SeedExcelStrategy(ParsingStrategy):
                 break
 
             if resource_from.startswith("http"):
-                payload = {
+                payload: Any = {
                     "package_id": data_dict.data["name"],
                     "url": resource_from,
                     "name": resource_title,
@@ -84,9 +84,9 @@ class SeedExcelStrategy(ParsingStrategy):
             yield ResourceRecord(payload)
 
 
-def _prepare_data_dict(rows):
+def _prepare_data_dict(rows: Any):
     """Parse .xlsx file and pushes data to dict."""
-    raw = {}
+    raw: dict[str, Any] = {}
     for row in rows:
         field = row[0].value
         value = row[1].value

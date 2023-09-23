@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import zipfile
 from io import BytesIO
-from typing import IO, Any, Iterable, Optional
+from typing import Any, Iterable
 
 from werkzeug.datastructures import FileStorage
 
@@ -30,7 +30,7 @@ class ZipStrategy(ParsingStrategy):
         return locator
 
     def extract(
-        self, source: FileStorage, extras: Optional[ParsingExtras] = None
+        self, source: FileStorage, extras: ParsingExtras | None = None,
     ) -> Iterable[Any]:
         from . import get_handler
 

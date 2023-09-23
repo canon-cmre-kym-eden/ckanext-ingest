@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from typing import IO, Optional, Type
 
 from werkzeug.datastructures import FileStorage
 
-from .. import registry
+from ckanext.ingest import registry
 from .base import Handler, ParsingStrategy
 
 __all__ = ["Handler", "get_handler", "ParsingStrategy"]
 
-strategies = registry.Registry[Type[ParsingStrategy]]()
+strategies: registry.Registry[type[ParsingStrategy]] = registry.Registry()
 
 
-def get_handler(mime: Optional[str], source: FileStorage) -> Optional[Handler]:
+def get_handler(mime: str | None, source: FileStorage) -> Handler | None:
     choices = []
     for strategy in strategies:
         if not strategy.can_handle(mime, source):
@@ -25,3 +24,4 @@ def get_handler(mime: Optional[str], source: FileStorage) -> Optional[Handler]:
 
     if choices:
         return Handler(choices[0]())
+    return None

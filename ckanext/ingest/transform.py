@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 from typing_extensions import TypeAlias
 
@@ -9,6 +9,7 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.scheming.validation import validators_from_string
 
+validators_from_string: Any
 TransformationSchema: TypeAlias = "dict[str, Rules]"
 
 
@@ -31,7 +32,9 @@ class Rules(NamedTuple):
 
 
 def transform_package(
-    data_dict: dict[str, Any], type_: str = "dataset", profile: str = "ingest"
+    data_dict: dict[str, Any],
+    type_: str = "dataset",
+    profile: str = "ingest",
 ) -> dict[str, Any]:
     schema = _get_transformation_schema(type_, "dataset", profile)
     result = _transform(data_dict, schema)
@@ -40,18 +43,22 @@ def transform_package(
 
 
 def transform_resource(
-    data_dict: dict[str, Any], type_: str = "dataset", profile: str = "ingest"
+    data_dict: dict[str, Any],
+    type_: str = "dataset",
+    profile: str = "ingest",
 ) -> dict[str, Any]:
     schema = _get_transformation_schema(type_, "resource", profile)
     return _transform(data_dict, schema)
 
 
 def _get_transformation_schema(
-    type_: str, fieldset: str, profile: str
+    type_: str,
+    fieldset: str,
+    profile: str,
 ) -> TransformationSchema:
     schema = tk.h.scheming_get_dataset_schema(type_)
     if not schema:
-        raise TypeError(f"Schema {type_} does not exist")
+        raise ValueError(type_)
     fields = f"{fieldset}_fields"
 
     return {
@@ -62,7 +69,7 @@ def _get_transformation_schema(
 
 
 def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, Any]:
-    result = {}
+    result: dict[str, Any] = {}
 
     for field, rules in schema.items():
         for k in rules.options.alias or [rules.field["label"]]:
@@ -72,7 +79,9 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
             continue
 
         validators = validators_from_string(
-            rules.options.convert, rules.field, rules.schema
+            rules.options.convert,
+            rules.field,
+            rules.schema,
         )
         valid_data, _err = tk.navl_validate(data, {k: validators})
 
@@ -92,12 +101,12 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
 
 
 def _normalize_choice(
-    value: Union[str, list[str], None],
+    value: str | list[str] | None,
     choices: list[dict[str, str]],
     separator: str,
-) -> Union[str, list[str], None]:
+) -> str | list[str] | None:
     if not value:
-        return
+        return None
 
     if not isinstance(value, list):
         value = value.split(separator)

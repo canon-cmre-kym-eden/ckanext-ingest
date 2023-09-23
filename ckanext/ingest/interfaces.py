@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Type
+from typing import Iterable
 
 from ckan.plugins.interfaces import Interface
 
@@ -12,6 +12,6 @@ class IIngest(Interface):
 
     def get_ingest_strategies(
         self,
-    ) -> Iterable[Type[strategy.ParsingStrategy]]:
+    ) -> Iterable[type[strategy.ParsingStrategy]]:
         """Return an iterable of provided parsing strategies."""
         return []

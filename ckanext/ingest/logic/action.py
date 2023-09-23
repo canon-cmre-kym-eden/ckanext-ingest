@@ -4,32 +4,30 @@ import itertools
 import logging
 import mimetypes
 from typing import Any
+from ckan import types
 
 import ckan.plugins.toolkit as tk
 from ckan.logic import validate
 
-from ckanext.toolbelt.decorators import Collector
-
-from .. import strategy
-from ..artifact import make_artifacts
+from ckanext.ingest import strategy
+from ckanext.ingest.artifact import make_artifacts
 from . import schema
 
 log = logging.getLogger(__name__)
-action, get_actions = Collector("ingest").split()
 
 
-@action
 @validate(schema.extract_records)
-def extract_records(context, data_dict) -> list[dict[str, Any]]:
+def ingest_extract_records(
+    context: types.Context, data_dict: dict[str, Any],
+) -> list[dict[str, Any]]:
     tk.check_access("ingest_extract_records", context, data_dict)
     records = _extract_records(data_dict)
 
     return [r.data for r in records]
 
 
-@action
 @validate(schema.import_records)
-def import_records(context, data_dict):
+def ingest_import_records(context: types.Context, data_dict: dict[str, Any]):
     tk.check_access("ingest_import_records", context, data_dict)
 
     start = data_dict.get("start", 0)
@@ -52,7 +50,7 @@ def import_records(context, data_dict):
                 {
                     "error": e.message or "Package does not exists",
                     "source": record.raw,
-                }
+                },
             )
 
         else:
@@ -70,7 +68,7 @@ def _extract_records(data_dict: dict[str, Any]):
 
     if not handler:
         raise tk.ValidationError(
-            {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]}
+            {"source": [tk._("Unsupported MIMEType {mime}").format(mime=mime)]},
         )
 
     return handler.parse(data_dict["source"], data_dict["extras"])

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import cgi
 import mimetypes
+from typing import Any
+from ckan import types
 
 import magic
 from werkzeug.datastructures import FileStorage
@@ -9,15 +11,16 @@ from werkzeug.datastructures import FileStorage
 import ckan.plugins.toolkit as tk
 from ckan.logic.schema import validator_args
 
-from .. import artifact
+from ckanext.ingest import artifact
 
 
-def uploaded_file(value):
+def uploaded_file(value: Any):
     if isinstance(value, FileStorage):
         return value
 
     if isinstance(value, cgi.FieldStorage):
-        assert value.filename and value.file, "File must be specified"
+        if not value.filename or not value.file:
+            raise ValueError(value)
 
         mime, _encoding = mimetypes.guess_type(value.filename)
         if not mime:
@@ -26,20 +29,21 @@ def uploaded_file(value):
 
         return FileStorage(value.file, value.filename, content_type=mime)
 
-    raise tk.Invalid(f"Unsupported upload type {type(value)}")
+    msg = f"Unsupported upload type {type(value)}"
+    raise tk.Invalid(msg)
 
 
 @validator_args
 def import_records(
-    not_missing,
-    boolean_validator,
-    default,
-    convert_to_json_if_string,
-    dict_only,
-    one_of,
-    natural_number_validator,
-    ignore_missing,
-):
+    not_missing: types.Validator,
+    boolean_validator: types.Validator,
+    default: types.ValidatorFactory,
+    convert_to_json_if_string: types.Validator,
+    dict_only: types.Validator,
+    one_of: types.ValidatorFactory,
+    natural_number_validator: types.Validator,
+    ignore_missing: types.Validator,
+) -> types.Schema:
     return {
         "source": [not_missing, uploaded_file],
         "report": [default("stats"), one_of([t.name for t in artifact.Type])],
@@ -55,16 +59,12 @@ def import_records(
 
 @validator_args
 def extract_records(
-    not_missing,
-    default,
-    natural_number_validator,
-    ignore_missing,
-    convert_to_json_if_string,
-    dict_only,
-):
+    not_missing: types.Validator,
+    default: types.ValidatorFactory,
+    convert_to_json_if_string: types.Validator,
+    dict_only: types.Validator,
+) -> types.Schema:
     return {
         "source": [not_missing, uploaded_file],
         "extras": [default("{}"), convert_to_json_if_string, dict_only],
-        # "start": [default(0), natural_number_validator],
-        # "rows": [ignore_missing, natural_number_validator],
     }

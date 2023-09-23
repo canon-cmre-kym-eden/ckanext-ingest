@@ -1,22 +1,19 @@
 from __future__ import annotations
-
-import ckan.plugins.toolkit as tk
-
-from ckanext.toolbelt.decorators import Collector
-
-auth, get_auth_functions = Collector("ingest").split()
+from typing import Any
+from ckan import authz, types
 
 
-@auth
-def import_records(context, data_dict):
-    return tk.check_access("package_create", context, data_dict)
+def ingest_use_ingest(context: types.Context, data_dict: dict[str, Any]):
+    return authz.is_authorized("package_create", context, data_dict)
 
 
-@auth
-def extract_records(context, data_dict):
-    return tk.check_access("package_create", context, data_dict)
+def ingest_import_records(context: types.Context, data_dict: dict[str, Any]):
+    return authz.is_authorized("ingest_use_ingest", context, data_dict)
 
 
-@auth
-def web_ui(context, data_dict):
-    return tk.check_access("package_create", context, data_dict)
+def ingest_extract_records(context: types.Context, data_dict: dict[str, Any]):
+    return authz.is_authorized("ingest_use_ingest", context, data_dict)
+
+
+def ingest_web_ui(context: types.Context, data_dict: dict[str, Any]):
+    return authz.is_authorized("ingest_use_ingest", context, data_dict)

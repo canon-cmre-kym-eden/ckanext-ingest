@@ -7,5 +7,5 @@ setup(
             ("**.js", "javascript", None),
             ("**/templates/**.html", "ckan", None),
         ],
-    }
+    },
 )

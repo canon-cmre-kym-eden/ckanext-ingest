@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Any
+from typing import Any, Callable
+from typing_extensions import Self
 
-import ckan.model as model
+from ckan import model, types
 import ckan.plugins.toolkit as tk
 
 from . import transform
@@ -28,14 +29,14 @@ class Record(abc.ABC):
     def __post_init__(self):
         self.data = self.transform(self.raw)
 
-    def transform(self, raw):
+    def transform(self, raw: Any):
         return raw
 
     def fill(self, defaults: dict[str, Any], overrides: dict[str, Any]):
         self.data = {**defaults, **self.data, **overrides}
 
     @abc.abstractmethod
-    def ingest(self, context: dict[str, Any]):
+    def ingest(self, context: types.Context) -> Any:
         pass
 
     def set_options(self, data: dict[str, Any]):
@@ -49,7 +50,7 @@ class TypedRecord(Record):
     type: str
 
     @classmethod
-    def type_factory(cls, type_: str, **partial: Any):
+    def type_factory(cls, type_: str, **partial: Any) -> Callable[..., Self]:
         return lambda *a, **k: cls(*a, type=type_, **{**k, **partial})
 
 
@@ -58,11 +59,10 @@ class PackageRecord(TypedRecord):
     type: str = "dataset"
     profile: str = "ingest"
 
-    def transform(self, raw):
-        data = transform.transform_package(raw, self.type, self.profile)
-        return data
+    def transform(self, raw: Any):
+        return transform.transform_package(raw, self.type, self.profile)
 
-    def ingest(self, context: dict[str, Any]):
+    def ingest(self, context: types.Context) -> Any:
         exists = (
             model.Package.get(self.data.get("id", self.data.get("name"))) is not None
         )
@@ -85,16 +85,18 @@ class ResourceRecord(TypedRecord):
     type: str = "dataset"
     profile: str = "ingest"
 
-    def transform(self, raw):
-        data = transform.transform_resource(raw, self.type, self.profile)
-        return data
+    def transform(self, raw: Any):
+        return transform.transform_resource(raw, self.type, self.profile)
 
-    def ingest(self, context: dict[str, Any]):
+    def ingest(self, context: types.Context) -> Any:
         existing = model.Resource.get(self.data.get("id", ""))
-        exists = existing and existing.state == "active"
+        if not existing:
+            raise tk.ObjectNotFound("resource")
+
+        exists = existing.state == "active"
 
         allow_transfer = tk.asbool(
-            tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER)
+            tk.config.get(CONFIG_ALLOW_TRANSFER, DEFAULT_ALLOW_TRANSFER),
         )
         if exists and existing.package_id != self.data.get("package_id"):
             if allow_transfer:
@@ -105,8 +107,8 @@ class ResourceRecord(TypedRecord):
                         "id": (
                             "Resource already belogns to the package"
                             f" {existing.package_id}"
-                        )
-                    }
+                        ),
+                    },
                 )
 
         action = "resource_" + (

@@ -11,13 +11,13 @@ def make_artifacts(report: str) -> Artifacts:
 
 
 class Artifacts:
-    def fail(self, data):
+    def fail(self, data: Any):
         pass
 
-    def success(self, data):
+    def success(self, data: Any):
         pass
 
-    def collect(self):
+    def collect(self) -> Any:
         pass
 
 
@@ -27,12 +27,12 @@ class DetailedArtifacts(Artifacts):
     def __init__(self):
         self.collection = []
 
-    def fail(self, data):
+    def fail(self, data: Any):
         rec = {"success": False}
         rec.update(data)
         self.collection.append(rec)
 
-    def success(self, data):
+    def success(self, data: Any):
         rec = {"success": True}
         rec.update(data)
         self.collection.append(rec)
@@ -45,12 +45,12 @@ class TmpArtifacts(Artifacts):
     def __init__(self):
         self.output = tempfile.NamedTemporaryFile("w", delete=False)
 
-    def fail(self, data):
+    def fail(self, data: Any):
         rec = {"success": False}
         rec.update(data)
         self.output.write(json.dumps(rec) + "\n")
 
-    def success(self, data):
+    def success(self, data: Any):
         rec = {"success": True}
         rec.update(data)
         self.output.write(json.dumps(rec) + "\n")
@@ -64,10 +64,10 @@ class StatArtifacts(Artifacts):
     succeed: int = 0
     failed: int = 0
 
-    def fail(self, data):
+    def fail(self, data: Any):
         self.failed += 1
 
-    def success(self, data):
+    def success(self, data: Any):
         self.succeed += 1
 
     def collect(self):
