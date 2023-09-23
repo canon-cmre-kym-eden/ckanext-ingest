@@ -12,7 +12,7 @@ dataset_fields:
   form_placeholder: eg. A descriptive title
   validators: if_empty_same_as(name) unicode_safe
   ingest_options:
-    alias: Title
+    aliases: [Title]
 
 - field_name: name
   label: URL

@@ -13,7 +13,11 @@ from . import transform, config, shared
 @dataclasses.dataclass
 class PackageRecord(shared.Record):
     type: str = "dataset"
-    profile: str = "ingest"
+    profile: str = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        self.profile = self.options.get("profile", "ingest")
+        super().__post_init__()
 
     def transform(self, raw: Any):
         return transform.transform_package(raw, self.type, self.profile)
@@ -37,7 +41,12 @@ class PackageRecord(shared.Record):
 @dataclasses.dataclass
 class ResourceRecord(shared.Record):
     type: str = "dataset"
-    profile: str = "ingest"
+    profile: str = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        self.profile = self.options.get("profile", "ingest")
+
+        super().__post_init__()
 
     def transform(self, raw: Any):
         return transform.transform_resource(raw, self.type, self.profile)
@@ -46,8 +55,11 @@ class ResourceRecord(shared.Record):
         existing = model.Resource.get(self.data.get("id", ""))
         prefer_update = existing and existing.state == "active"
 
-
-        if existing and prefer_update and existing.package_id != self.data.get("package_id"):
+        if (
+            existing
+            and prefer_update
+            and existing.package_id != self.data.get("package_id")
+        ):
             if config.allow_transfer():
                 prefer_update = False
 
@@ -63,7 +75,9 @@ class ResourceRecord(shared.Record):
                 )
 
         action = "resource_" + (
-            "update" if prefer_update and self.options.get("update_existing") else "create"
+            "update"
+            if prefer_update and self.options.get("update_existing")
+            else "create"
         )
 
         result = tk.get_action(action)(context, self.data)

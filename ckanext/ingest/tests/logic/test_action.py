@@ -29,6 +29,7 @@ class TestExtractRecords:
     )
     def test_basic(self, source, filename):
         records = call_action("ingest_extract_records", source=source(filename))
+
         assert records == [
             {"name": "hello", "title": "Hello", "type": "dataset"},
             {"name": "world", "title": "World", "type": "dataset"},

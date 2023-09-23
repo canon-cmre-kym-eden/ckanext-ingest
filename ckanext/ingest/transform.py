@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 
 import ckan.plugins.toolkit as tk
 
-TransformationSchema: TypeAlias = "dict[str, Rules]"
+TransformationSchema: TypeAlias = "dict[str, Field]"
 
 
 @dataclasses.dataclass
@@ -26,6 +26,7 @@ class Options:
     * pass transformed data to CKAN API action
 
     """
+
     # names of the field in the raw data
     aliases: list[str] = dataclasses.field(default_factory=list)
 
@@ -45,9 +46,14 @@ class Options:
 
 
 @dataclasses.dataclass
-class Rules:
+class Field:
+    """Metadata field details."""
+
+    # transformation options
     options: Options
+    # field definition
     field: dict[str, Any]
+    # whole metadata schema
     schema: dict[str, Any]
 
 
@@ -56,7 +62,14 @@ def transform_package(
     type_: str = "dataset",
     profile: str = "ingest",
 ) -> dict[str, Any]:
-    schema = _get_transformation_schema(type_, "dataset", profile)
+    """Transform raw data into package_create/package_update payload.
+
+    Every schema field that has `{profile}_options` attribute will be
+    transformed from raw data using these options. Fields in schema that do not
+    have `{profile}_options` attribute are ignored.
+
+    """
+    schema = _get_transformation_schema(type_, "dataset_fields", profile)
     result = _transform(data_dict, schema)
     result.setdefault("type", type_)
     return result
@@ -67,7 +80,14 @@ def transform_resource(
     type_: str = "dataset",
     profile: str = "ingest",
 ) -> dict[str, Any]:
-    schema = _get_transformation_schema(type_, "resource", profile)
+    """Transform raw data into resource_create/resource_update payload.
+
+    Every schema field that has `{profile}_options` attribute will be
+    transformed from raw data using these options. Fields in schema that do not
+    have `{profile}_options` attribute are ignored.
+
+    """
+    schema = _get_transformation_schema(type_, "resource_fields", profile)
     return _transform(data_dict, schema)
 
 
@@ -76,26 +96,31 @@ def _get_transformation_schema(
     fieldset: str,
     profile: str,
 ) -> TransformationSchema:
+    """Parse metadata schema into transformation schema."""
     schema = tk.h.scheming_get_dataset_schema(type_)
     if not schema:
         raise ValueError(type_)
-    fields = f"{fieldset}_fields"
 
     return {
-        f["field_name"]: Rules(Options(**(f[f"{profile}_options"] or {})), f, schema)
-        for f in schema[fields]
-        if "ingest_options" in f
+        f["field_name"]: Field(Options(**(f[f"{profile}_options"] or {})), f, schema)
+        for f in schema[fieldset]
+        if f"{profile}_options" in f
     }
 
 
 def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, Any]:
+    """Transform raw data using transformation schema."""
     from ckanext.scheming.validation import validators_from_string
+
     validators_from_string: Any
 
     result: dict[str, Any] = {}
 
     for field, rules in schema.items():
-        for k in rules.options.aliases or [rules.field["field_name"], rules.field["label"]]:
+        for k in rules.options.aliases or [
+            rules.field["label"],
+            rules.field["field_name"],
+        ]:
             if k in data:
                 break
         else:
@@ -108,6 +133,7 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
         )
         valid_data, _err = tk.navl_validate(data, {k: validators})
 
+        # field was removed by one of ignore_* validators
         if k not in valid_data:
             continue
 
@@ -124,14 +150,15 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
 
 
 def _normalize_choice(
-    value: str | list[str] | None,
+    value: Any,
     choices: list[dict[str, str]],
     separator: str,
 ) -> str | list[str] | None:
+    """Transform select label[s] into corresponding value[s]"""
     if not value:
         return None
 
-    if not isinstance(value, list):
+    if isinstance(value, str):
         value = value.split(separator)
 
     mapping = {o["label"]: o["value"] for o in choices if "label" in o}

@@ -1,7 +1,6 @@
 from __future__ import annotations
 from ckan import types
 
-import abc
 import logging
 import dataclasses
 from typing import Any, ClassVar, Iterable
@@ -15,9 +14,10 @@ log = logging.getLogger(__name__)
 
 strategies: dict[str, type[ParsingStrategy]] = {}
 
+
 class RecordOptions(TypedDict, total=False):
-    """Options for Record extracted by Strategy.
-    """
+    """Options for Record extracted by Strategy."""
+
     # trigger an update if the data produced by the record already exists
     update_existing: bool
 
@@ -26,15 +26,15 @@ class RecordOptions(TypedDict, total=False):
 
 
 class StrategyOptions(TypedDict, total=False):
-    """Options for Strategy.
-    """
+    """Options for Strategy."""
+
     # options passed into every record produced by the strategy
     record_options: dict[str, Any]
 
 
 class IngestionResult(TypedDict, total=False):
-    """Outcome of the record ingestion.
-    """
+    """Outcome of the record ingestion."""
+
     # created/updated data
     result: Any
     # indicator of successful ingestion
@@ -44,7 +44,7 @@ class IngestionResult(TypedDict, total=False):
 
 
 @dataclasses.dataclass
-class Record(abc.ABC):
+class Record:
     """Single element produced by extraction strategy.
 
     The record is responsible for creating/updating the data.
@@ -63,24 +63,24 @@ class Record(abc.ABC):
         self.data = self.transform(self.raw)
 
     def transform(self, raw: dict[str, Any]) -> dict[str, Any]:
-        """Transform arbitrary data into a data that has sense for a record.
-        """
+        """Transform arbitrary data into a data that has sense for a record."""
         return raw
 
     def fill(self, defaults: dict[str, Any], overrides: dict[str, Any]):
-        """Apply default and overrides to the data.
-        """
+        """Apply default and overrides to the data."""
         self.data = {**defaults, **self.data, **overrides}
 
-    @abc.abstractmethod
     def ingest(self, context: types.Context) -> IngestionResult:
-        """Create/update something using the data.
-        """
-        pass
+        """Create/update something using the data."""
+        log.debug("No-op ingestion: %s", self.data)
 
+        return {
+            "success": True,
+            "result": None,
+            "details": {}
+        }
 
-
-class ParsingStrategy(abc.ABC):
+class ParsingStrategy:
     """Record extraction strategy.
 
     This class is repsonsible for parsing the source and yielding record
@@ -91,20 +91,26 @@ class ParsingStrategy(abc.ABC):
     """
 
     mimetypes: ClassVar[set[str]] = set()
+    record_factory: type[Record] = Record
 
     @classmethod
     def can_handle(cls, mime: str | None, source: FileStorage) -> bool:
-        """Check if strategy can handle given mimetype/source.
-        """
+        """Check if strategy can handle given mimetype/source."""
         return mime in cls.mimetypes
 
     @classmethod
     def must_handle(cls, mime: str | None, source: FileStorage) -> bool:
-        """Check if strategy is the best choice for handling given mimetype/source.
-        """
+        """Check if strategy is the best choice for handling given mimetype/source."""
         return False
 
-    @abc.abstractmethod
+    def chunks(self, source: FileStorage, options: StrategyOptions) -> Iterable[Any]:
+        """Iterate over separate chunks of data suitable for Record creation.
+        """
+        return []
+
+    def chunk_into_record(self, chunk: Any, options: StrategyOptions):
+        return self.record_factory(chunk, options.get("record_options", StrategyOptions()))
+
     def extract(
         self,
         source: FileStorage,
@@ -117,10 +123,14 @@ class ParsingStrategy(abc.ABC):
         strategies, so there are no guarantees or rules when you are using it.
 
         """
-        return []
+        for chunk in self.chunks(source, options):
+            yield self.chunk_into_record(chunk, options)
 
 
-def get_handler_for_mimetype(mime: str | None, source: FileStorage) -> ParsingStrategy | None:
+
+def get_handler_for_mimetype(
+    mime: str | None, source: FileStorage
+) -> ParsingStrategy | None:
     """Select the most suitable handler for the MIMEType.
 
     The first strategy that `must_handle` is returned. If there is no such
