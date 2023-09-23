@@ -36,7 +36,7 @@ class Options:
     # given separator
     choice_separator: str = ", "
 
-
+    # convert raw field using validators. Validation errors are ignored.
     convert: str = ""
 
     def __post_init__(self):
@@ -108,10 +108,10 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
         )
         valid_data, _err = tk.navl_validate(data, {k: validators})
 
-        value = valid_data[k]
-        if value == "":
+        if k not in valid_data:
             continue
 
+        value = valid_data[k]
         if rules.options.normalize_choice:
             value = _normalize_choice(
                 value,
