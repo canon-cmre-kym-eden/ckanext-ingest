@@ -11,11 +11,21 @@ from . import config, shared, transform
 
 @dataclasses.dataclass
 class PackageRecord(shared.Record):
+    """Package mapped from raw data via metadata schema.
+
+    Options:
+
+        extras["profile"]: transformation profile. Defines the name of scheming
+        field's attribute `{profile}_options` that contains transformation
+        rules.
+
+    """
+
     type: str = "dataset"
     profile: str = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.profile = self.options.get("profile", "ingest")
+        self.profile = self.options.get("extras", {}).get("profile", "ingest")
         super().__post_init__()
 
     def transform(self, raw: Any):
@@ -39,11 +49,21 @@ class PackageRecord(shared.Record):
 
 @dataclasses.dataclass
 class ResourceRecord(shared.Record):
+    """Package mapped from raw data via metadata schema.
+
+    Options:
+
+        extras["profile"]: transformation profile. Defines the name of scheming
+        field's attribute `{profile}_options` that contains transformation
+        rules.
+
+    """
+
     type: str = "dataset"
     profile: str = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.profile = self.options.get("profile", "ingest")
+        self.profile = self.options.get("extras", {}).get("profile", "ingest")
 
         super().__post_init__()
 

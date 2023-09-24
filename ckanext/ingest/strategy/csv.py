@@ -5,13 +5,13 @@ import logging
 from io import StringIO
 
 from ckanext.ingest.record import PackageRecord
-from ckanext.ingest.shared import ParsingStrategy, Storage, StrategyOptions
+from ckanext.ingest.shared import ExtractionStrategy, Storage, StrategyOptions
 
 log = logging.getLogger(__name__)
 
 
-class CsvStrategy(ParsingStrategy):
-    """Transform CSV rows into datasets using ckanext-scheming.
+class CsvStrategy(ExtractionStrategy):
+    """Transform CExtractionStrategytasets using ckanext-scheming.
 
     Every scheming field that has `ingest_options` attribute defines how data
     from the row maps into metadata schema. For example, if `notes` field has

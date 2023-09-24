@@ -44,7 +44,7 @@ class IngestPlugin(plugins.SingletonPlugin):
                 shared.strategies.update({final_name: s})
 
     # IIngest
-    def get_ingest_strategies(self) -> dict[str, type[shared.ParsingStrategy]]:
+    def get_ingest_strategies(self) -> dict[str, type[shared.ExtractionStrategy]]:
         from .strategy import csv, zip
 
         return {

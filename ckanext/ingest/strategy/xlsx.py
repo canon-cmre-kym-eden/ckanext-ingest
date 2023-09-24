@@ -14,7 +14,7 @@ from ckan.lib import munge
 
 from ckanext.ingest.record import PackageRecord, ResourceRecord
 from ckanext.ingest.shared import (
-    ParsingStrategy,
+    ExtractionStrategy,
     Storage,
     StrategyOptions,
     make_file_storage,
@@ -23,7 +23,7 @@ from ckanext.ingest.shared import (
 log = logging.getLogger(__name__)
 
 
-class SeedExcelStrategy(ParsingStrategy):
+class SeedExcelStrategy(ExtractionStrategy):
     """Extractor for SEED data portal."""
 
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}

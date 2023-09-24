@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - API actions accept `strategy` parameter. Auto-detection using mimetype used when `strategy` is missing ([cce4078](https://github.com/DataShades/ckanext-ingest/commit/cce40780e4494ddf82584c6ac6a02355dc4be8d6) by Sergey Motornyuk).
 - Record.set_options removed ([52de560](https://github.com/DataShades/ckanext-ingest/commit/52de560f8f4e79759a941efa16abffa5160756af) by Sergey Motornyuk).
 - start/rows parameters of API actions renamed to skip/take ([f8240de](https://github.com/DataShades/ckanext-ingest/commit/f8240dec5ee812fcd0aec52dd6da26772ef277dc) by Sergey Motornyuk).
-- IIngest.get_ingest_strategies returns dict[str,ParsingStrategy] ([2f9da5b](https://github.com/DataShades/ckanext-ingest/commit/2f9da5b716be5bfdb2cfddd5a48fb31f9598b31a) by Sergey Motornyuk).
+- IIngest.get_ingest_strategies returns dict[str,ExtractionStrategy] ([2f9da5b](https://github.com/DataShades/ckanext-ingest/commit/2f9da5b716be5bfdb2cfddd5a48fb31f9598b31a) by Sergey Motornyuk).
 - remove `process` command ([773d27b](https://github.com/DataShades/ckanext-ingest/commit/773d27ba0acdbb465b4467de5532bac47d610643) by Sergey Motornyuk).
 - add config declarations ([bd0b81a](https://github.com/DataShades/ckanext-ingest/commit/bd0b81aeabed791e163b5ec0a87c636391c38112) by Sergey Motornyuk).
 - min CKAN v2.10 requirement ([bd07a13](https://github.com/DataShades/ckanext-ingest/commit/bd07a13b37197c56ee16d37abe038030a78dc04b) by Sergey Motornyuk).
@@ -65,4 +65,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.0.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.0.0) - 2022-02-07
 
 <small>[Compare with first commit](https://github.com/DataShades/ckanext-ingest/compare/5218fb4ae2e6c806e027ff44a5a17bd41377967c...v1.0.0)</small>
-

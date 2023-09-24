@@ -10,6 +10,6 @@ class IIngest(Interface):
 
     def get_ingest_strategies(
         self,
-    ) -> dict[str, type[shared.ParsingStrategy]]:
+    ) -> dict[str, type[shared.ExtractionStrategy]]:
         """Return parsing strategies."""
         return {}

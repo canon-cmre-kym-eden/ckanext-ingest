@@ -11,7 +11,7 @@ from ckan import types
 
 log = logging.getLogger(__name__)
 
-strategies: dict[str, type[ParsingStrategy]] = {}
+strategies: dict[str, type[ExtractionStrategy]] = {}
 
 Storage = FileStorage
 
@@ -25,6 +25,9 @@ class RecordOptions(TypedDict, total=False):
     # return more details after producing the data
     verbose: bool
 
+    # custom options that are not stabilized yet
+    extras: dict[str, Any]
+
 
 class StrategyOptions(TypedDict, total=False):
     """Options for Strategy."""
@@ -36,6 +39,13 @@ class StrategyOptions(TypedDict, total=False):
     # refer files in archive when creating a resource record with uploaded
     # file, for example.
     file_locator: Callable[[str], IO[bytes] | None]
+
+    # strategy that should be used for nested sources. For example, for files
+    # inside an archivecd
+    nested_strategy: str
+
+    # custom options that are not stabilized yet
+    extras: dict[str, Any]
 
 
 class IngestionResult(TypedDict, total=False):
@@ -83,7 +93,7 @@ class Record:
         return {"success": True, "result": None, "details": {}}
 
 
-class ParsingStrategy:
+class ExtractionStrategy:
     """Record extraction strategy.
 
     This class is repsonsible for parsing the source and yielding record
@@ -107,12 +117,14 @@ class ParsingStrategy:
         return False
 
     def chunks(self, source: Storage, options: StrategyOptions) -> Iterable[Any]:
-        """Iterate over separate chunks of data suitable for Record creation."""
+        """Iterate over separate chunks of data with correpoinding options
+        suitable for Record creation."""
         return []
 
-    def chunk_into_record(self, chunk: Any, options: StrategyOptions):
+    def chunk_into_record(self, chunk: Any, options: StrategyOptions) -> Record:
         return self.record_factory(
-            chunk, options.get("record_options", StrategyOptions()),
+            chunk,
+            options.get("record_options", StrategyOptions()),
         )
 
     def extract(
@@ -122,7 +134,7 @@ class ParsingStrategy:
     ) -> Iterable[Record]:
         """Return iterable over all records extracted from source.
 
-        `extras` contains settings, helpers and other artifacts that can help
+        `opptions` contains settings, helpers and other artifacts that can help
         during extraction. It's passed by user or generated/modified by other
         strategies, so there are no guarantees or rules when you are using it.
 
@@ -132,15 +144,16 @@ class ParsingStrategy:
 
 
 def get_handler_for_mimetype(
-    mime: str | None, source: Storage,
-) -> ParsingStrategy | None:
+    mime: str | None,
+    source: Storage,
+) -> ExtractionStrategy | None:
     """Select the most suitable handler for the MIMEType.
 
     The first strategy that `must_handle` is returned. If there is no such
     strategy, the first that `can_handle` is returned.
 
     """
-    choices: list[type[ParsingStrategy]] = []
+    choices: list[type[ExtractionStrategy]] = []
     for strategy in strategies.values():
         if not strategy.can_handle(mime, source):
             continue
@@ -157,6 +170,8 @@ def get_handler_for_mimetype(
 
 
 def make_file_storage(
-    stream: IO[bytes], name: str | None = None, mimetype: str | None = None,
+    stream: IO[bytes],
+    name: str | None = None,
+    mimetype: str | None = None,
 ):
     return Storage(stream, name, content_type=mimetype)
