@@ -38,6 +38,9 @@ class XlsxStrategy(shared.ExtractionStrategy):
 
         min_row/max_row/min_col/max_col: int - restrict the scope of parsing
 
+        with_header: bool - parse rows as dict, using the first row for names.
+        When unset, every row parsed as a list.
+
     """
 
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
@@ -70,8 +73,15 @@ class XlsxStrategy(shared.ExtractionStrategy):
                 min_col=extras.get("min_col"),
                 max_col=extras.get("max_col"),
             )
+            header = None
+            if extras.get("with_header"):
+                header = [c.value for c in next(rows)]
+
             for row in rows:
+                values = [c.value for c in row]
+                data = dict(zip(header, values)) if header else values
+
                 yield shared.Record(
-                    {"row": [c.value for c in row]},
+                    {"row": data},
                     options.get("record_options", shared.RecordOptions()),
                 )
