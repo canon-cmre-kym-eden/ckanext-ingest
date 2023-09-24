@@ -49,7 +49,7 @@ represent minimal amount of data from the source that is required for
 **ingestion**(process when something is created/updated/etc.).
 
 `strategy` is registered via `IIngest` interface. It has to be a subclass of
-`ckanext.ingest.shared.ExtractionStrategy` class. The only requirement for
+`ckanext.ingest.shared.ExtractionStrategy`. The only requirement for
 `strategy` is to return iterable of `records` from its `extract` method.
 
 `record` is created by `strategy` and it has to be a subclass of
@@ -89,9 +89,9 @@ class SingleJsonStrategy(ExtractionStrategy):
         # source is a readable IO stream(werkzeug.datastructures.FileStorage)
         data = json.load(source)
 
-        # extract must return iterable over records. When the strategy produces
-        # a single record, it can be either yielded or returned as a list with
-        # a single element
+        # `extract` returns iterable over records. When the strategy produces
+        # a single record, this record can be either yielded or returned as
+        # a list with a single element
         yield SimplePackageRecord(data, {})
 
 class SimplePackageRecord(Record):
