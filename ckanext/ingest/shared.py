@@ -33,7 +33,7 @@ class StrategyOptions(TypedDict, total=False):
     """Options for Strategy."""
 
     # options passed into every record produced by the strategy
-    record_options: dict[str, Any]
+    record_options: RecordOptions
 
     # function that returns a file from source using its name. Can be used to
     # refer files in archive when creating a resource record with uploaded
@@ -124,7 +124,7 @@ class ExtractionStrategy:
     def chunk_into_record(self, chunk: Any, options: StrategyOptions) -> Record:
         return self.record_factory(
             chunk,
-            options.get("record_options", StrategyOptions()),
+            options.get("record_options", RecordOptions()),
         )
 
     def extract(

@@ -18,4 +18,4 @@ def ingest_extract_records(context: types.Context, data_dict: dict[str, Any]):
 
 
 def ingest_web_ui(context: types.Context, data_dict: dict[str, Any]):
-    return authz.is_authorized("ingest_use_ingest", context, data_dict)
+    return authz.is_authorized("sysadmin", context, data_dict)

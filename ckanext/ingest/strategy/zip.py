@@ -31,16 +31,23 @@ class ZipStrategy(shared.ExtractionStrategy):
 
     Options:
 
-        nested_strategy: extraction strategy applied to files in the archive. By
-        default, strategy is defined based on file's mimetype
+        nested_strategy: str - extraction strategy applied to files in the
+        archive. By default, strategy is defined based on file's mimetype
 
-        extras["glob"]: ingest only files matching the pattern
+        extras["glob"]: str - ingest only files matching the pattern
+
+        extras["relative_locator"]: bool - file locator treat names as relative
+        to the currently parsed file
+
     """
 
     mimetypes = {"application/zip"}
 
-    def _make_locator(self, archive: zipfile.ZipFile):
+    def _make_locator(self, archive: zipfile.ZipFile, path: str | None = None):
         def locator(name: str):
+            if path:
+                name = os.path.join(path, name)
+
             try:
                 return archive.open(name)
             except KeyError:
@@ -58,12 +65,17 @@ class ZipStrategy(shared.ExtractionStrategy):
         options: shared.StrategyOptions,
     ) -> Iterable[ZipChunk]:
         with zipfile.ZipFile(BytesIO(source.read())) as archive:
-            file_locator = self._make_locator(archive)
-            glob: str = options.get("extras", {}).get("glob", "")
+            extras = options.get("extras", {})
+            glob: str = extras.get("glob", "")
 
             for item in archive.namelist():
                 if glob and not fnmatch(item, glob):
                     continue
+
+                file_locator = self._make_locator(
+                    archive,
+                    os.path.dirname(item) if extras.get("relative_locator") else None,
+                )
 
                 mime, _encoding = mimetypes.guess_type(item)
                 if strategy := options.get("nested_strategy"):
