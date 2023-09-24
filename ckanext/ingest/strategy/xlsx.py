@@ -31,7 +31,7 @@ class XlsxChunk(TypedDict):
 class XlsxStrategy(shared.ExtractionStrategy):
     """Extractor data from XLSX files.
 
-    Options:
+    Options[extras]:
 
         sheets: list[str] - names of processed sheets. All other sheets are not
         extracted but still available via locator in code.
