@@ -215,6 +215,9 @@ To install ckanext-ingest:
 1. Install it via **pip**:
    ```sh
    pip install ckanext-ingest
+
+   ## with basic XLSX strategy
+   # pip install 'ckanext-ingest[xlsx]'
    ```
 1. Add `ingest` to the `ckan.plugins` setting in your CKAN config file.
 

@@ -7,102 +7,71 @@ resources to rewrite it and create a proper base XLSX strategy.
 from __future__ import annotations
 
 import logging
-from io import BytesIO
-from typing import Any
+from typing import IO, Callable, Iterable, TypedDict, cast
 
-from ckan.lib import munge
+from ckanext.ingest import shared
 
-from ckanext.ingest.record import PackageRecord, ResourceRecord
-from ckanext.ingest.shared import (
-    ExtractionStrategy,
-    Storage,
-    StrategyOptions,
-    make_file_storage,
-)
+try:
+    from openpyxl import Workbook, load_workbook
+    from openpyxl.worksheet.worksheet import Worksheet
+
+    is_installed = True
+except ImportError:
+    is_installed = False
 
 log = logging.getLogger(__name__)
 
 
-class SeedExcelStrategy(ExtractionStrategy):
-    """Extractor for SEED data portal."""
+class XlsxChunk(TypedDict):
+    sheet: Worksheet
+    document: Workbook
+    locator: Callable[[str], Worksheet | None]
+
+
+class XlsxStrategy(shared.ExtractionStrategy):
+    """Extractor data from XLSX files.
+
+    Options:
+
+        sheets: list[str] - names of processed sheets. All other sheets are not
+        extracted but still available via locator in code.
+
+        min_row/max_row/min_col/max_col: int - restrict the scope of parsing
+
+    """
 
     mimetypes = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
 
-    def extract(self, source: Storage, options: StrategyOptions | None = None):
-        from openpyxl import load_workbook
+    def chunks(
+        self,
+        source: shared.Storage,
+        options: shared.StrategyOptions,
+    ) -> Iterable[XlsxChunk]:
+        doc = load_workbook(cast(IO[bytes], source), read_only=True, data_only=True)
+        sheets = options.get("extras", {}).get("sheets", doc.sheetnames)
 
-        doc = load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
+        for sheet in doc:
+            if sheet.title not in sheets:
+                continue
 
-        md_name = "Dataset Metadata"
-        res_name = "Resources"
-        if md_name not in doc or res_name not in doc:
-            log.warning(
-                "Excel document does not contain '%s' or '%s' sheet",
-                md_name,
-                res_name,
+            yield {
+                "sheet": sheet,
+                "document": doc,
+                "locator": lambda name: doc[name] if name in doc else None,
+            }
+
+    def extract(self, source: shared.Storage, options: shared.StrategyOptions):
+        extras = options.get("extras", {})
+
+        for chunk in self.chunks(source, options):
+            rows = chunk["sheet"].iter_rows(
+                min_row=extras.get("min_row"),
+                max_row=extras.get("max_row"),
+                min_col=extras.get("min_col"),
+                max_col=extras.get("max_col"),
             )
-            return
-
-        metadata_sheet = doc[md_name]
-        resources_sheet = doc[res_name]
-
-        rows: Any = metadata_sheet.iter_rows(min_row=1)
-        data_dict = PackageRecord(_prepare_data_dict(rows))
-        if not data_dict.data.get("name"):
-            data_dict.data["name"] = munge.munge_title_to_name(data_dict.data["title"])
-
-        yield data_dict
-
-        for row in resources_sheet.iter_rows(min_row=1):
-            if not row[0].value:
-                continue
-            resource_title = row[0].value
-            resource_from: Any = row[1].value
-            resource_format = row[2].value
-            resource_desc = row[3].value
-
-            if not resource_title:
-                break
-
-            if resource_from.startswith("http"):
-                payload: Any = {
-                    "package_id": data_dict.data["name"],
-                    "url": resource_from,
-                    "name": resource_title,
-                    "format": resource_format,
-                    "description": resource_desc,
-                }
-            elif options and "locator" in options:
-                fp = options["locator"](resource_from)
-                if not fp:
-                    log.warning("Cannot locate file for resource %s", resource_title)
-                    continue
-                payload = {
-                    "package_id": data_dict.data["name"],
-                    # url must be provided, even for uploads
-                    "url": resource_from,
-                    "format": resource_format,
-                    "name": resource_title,
-                    "description": resource_desc,
-                    "url_type": "upload",
-                    "upload": make_file_storage(fp, resource_from),
-                }
-
-            else:
-                log.warning("Cannot determine source filesystem of %s", resource_title)
-                continue
-
-            yield ResourceRecord(payload)
-
-
-def _prepare_data_dict(rows: Any):
-    """Parse .xlsx file and pushes data to dict."""
-    raw: dict[str, Any] = {}
-    for row in rows:
-        field = row[0].value
-        value = row[1].value
-        if not field:
-            continue
-        raw[field] = value
-
-    return raw
+            for row in rows:
+                yield shared.Record(
+                    {"row": [c.value for c in row]},
+                    options.get("record_options", shared.RecordOptions()),
+                )

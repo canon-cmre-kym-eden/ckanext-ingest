@@ -45,9 +45,13 @@ class IngestPlugin(plugins.SingletonPlugin):
 
     # IIngest
     def get_ingest_strategies(self) -> dict[str, type[shared.ExtractionStrategy]]:
-        from .strategy import csv, zip
+        from .strategy import csv, xlsx, zip
 
-        return {
+        strategies = {
             "ingest:recursive_zip": zip.ZipStrategy,
             "ingest:scheming_csv": csv.CsvStrategy,
         }
+        if xlsx.is_installed:
+            strategies["ingest:xlsx"] = xlsx.XlsxStrategy
+
+        return strategies
