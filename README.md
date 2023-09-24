@@ -99,6 +99,7 @@ class SimplePackageRecord(Record):
 
         dataset = tk.get_action("package_create")(context, self.data)
 
+        # `ingest` returns a brief overvies of the ingestion
         return {
             "success": True,
             "result": dataset,
@@ -117,11 +118,14 @@ from ckanext.ingest.shared import ExtractionStrategy, Record
 class DropOrganizationsUsingCsvStrategy(ExtractionStrategy):
 
     def extract(self, source, options):
-        rows = csv.DictReader(StringIO(source.read().decode()))
+        # `source` is an `IO[bytes]`, so we turn in into `IO[str]`
+        str_stream = StringIO(source.read().decode())
+        rows = csv.DictReader(st_stream)
 
         for row in rows:
-            if row["name"]:
-                yield DropOrganiationRecord(row, {})
+            # record's constructor requires two arguments:
+            # the raw data and the mapping with record options.
+            yield DropOrganiationRecord(row, {})
 
 class DropOrganizationRecord(Record):
     def ingest(self, context: ckan.types.Context):
@@ -157,9 +161,11 @@ class HarvestStrategy(ExtractionStrategy):
 
         now = datetime.utcnow()
 
+        # produce a record that creates a package for every remote dataset
         for dataset in client.action.package_search()["results"]:
             yield SimpleDatasetRecord(row, {})
 
+        # produce an additional record that removes stale datasets
         yield DeleteStaleDatasetsRecord({"before": now}, {})
 
 class SimplePackageRecord(Record):
