@@ -4,9 +4,9 @@
 
 Framework for data import from arbitrary sources.
 
-Note: this extension has no aim to do import everything in CKAN. Instead, it
-defines a structure and rules for making import more predictable, reusable and
-flexible.
+Note: this extension has no aim to perform import of every possible data source
+into CKAN. Instead, it defines a structure and rules for making import more
+predictable, reusable and flexible.
 
 This extension can be used if you need to:
 
@@ -25,7 +25,7 @@ And you probably don't need it if you want to:
 
 * [Usage](#usage)
 * [Examples](#examples)
-* [Requirements](#definition)
+* [Requirements](#requirements)
 * [Installation](#installation)
 * [Configuration](#configuration)
 * [Interfaces](#interfaces)
@@ -37,7 +37,11 @@ And you probably don't need it if you want to:
 
 Data can be ingested into CKAN via `ingest_import_records` API action. It
 requires a `source` with the data, and it's recommended to pass an extraction
-`strategy` name, to get a full control over the process.
+`strategy`, to get a full control over the process.
+
+```sh
+ckanapi action ingest_import_records source@path/to/data.zip strategy="myext:extract_archive"
+```
 
 But before anything can be ingested you have to regiser a `strategy` that
 produces `records`. `strategy` defines how source is parsed, and `record`
@@ -53,11 +57,6 @@ represent minimal amount of data from the source that is required for
 ingestion: depending on the record purpose, it can create/update/delete data or
 perform any other task that has sense.
 
-When you have `strategy` ans a source, you can ingest it into CKAN via `ckanapi`:
-
-```sh
-ckanapi action ingest_extract_records source@path/to/data.zip strategy="myext:extract_archive"
-```
 
 ## Examples
 
