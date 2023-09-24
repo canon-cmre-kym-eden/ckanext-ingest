@@ -19,7 +19,7 @@ class ZipChunk(TypedDict):
     handler: shared.ExtractionStrategy
     name: str
     source: shared.Storage
-    file_locator: Callable[[str], IO[bytes]]
+    locator: Callable[[str], IO[bytes]]
 
 
 class ZipStrategy(shared.ExtractionStrategy):
@@ -72,7 +72,7 @@ class ZipStrategy(shared.ExtractionStrategy):
                 if glob and not fnmatch(item, glob):
                     continue
 
-                file_locator = self._make_locator(
+                locator = self._make_locator(
                     archive,
                     os.path.dirname(item) if extras.get("relative_locator") else None,
                 )
@@ -97,7 +97,7 @@ class ZipStrategy(shared.ExtractionStrategy):
                     "handler": handler,
                     "name": item,
                     "source": shared.make_file_storage(archive.open(item)),
-                    "file_locator": file_locator,
+                    "locator": locator,
                 }
 
     def extract(
@@ -108,6 +108,6 @@ class ZipStrategy(shared.ExtractionStrategy):
         for chunk in self.chunks(source, options):
             nested_options = shared.StrategyOptions(
                 options,
-                file_locator=chunk["file_locator"],
+                locator=chunk["locator"],
             )
             yield from chunk["handler"].extract(chunk["source"], nested_options)

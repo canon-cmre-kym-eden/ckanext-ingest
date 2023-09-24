@@ -72,8 +72,8 @@ class SeedExcelStrategy(ExtractionStrategy):
                     "format": resource_format,
                     "description": resource_desc,
                 }
-            elif options and "file_locator" in options:
-                fp = options["file_locator"](resource_from)
+            elif options and "locator" in options:
+                fp = options["locator"](resource_from)
                 if not fp:
                     log.warning("Cannot locate file for resource %s", resource_title)
                     continue

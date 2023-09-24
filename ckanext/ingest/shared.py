@@ -38,7 +38,7 @@ class StrategyOptions(TypedDict, total=False):
     # function that returns a file from source using its name. Can be used to
     # refer files in archive when creating a resource record with uploaded
     # file, for example.
-    file_locator: Callable[[str], IO[bytes] | None]
+    locator: Callable[..., Any]
 
     # strategy that should be used for nested sources. For example, for files
     # inside an archivecd
