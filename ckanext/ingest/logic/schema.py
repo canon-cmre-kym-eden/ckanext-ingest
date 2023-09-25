@@ -28,7 +28,7 @@ def into_uploaded_file(value: Any):
             mime = magic.from_buffer(value.file.read(1024), True)
             value.file.seek(0)
 
-        return shared.make_file_storage(value.file, value.filename, mime)
+        return shared.make_storage(value.file, value.filename, mime)
 
     if isinstance(value, str):
         value = value.encode()
@@ -37,7 +37,7 @@ def into_uploaded_file(value: Any):
         stream = BytesIO(value)
         mime = magic.from_buffer(stream.read(1024), True)
         stream.seek(0)
-        return shared.make_file_storage(stream, mimetype=mime)
+        return shared.make_storage(stream, mimetype=mime)
 
     msg = f"Unsupported source type: {type(value)}"
     raise tk.Invalid(msg)

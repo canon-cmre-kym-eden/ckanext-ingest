@@ -169,7 +169,7 @@ def get_handler_for_mimetype(
     return None
 
 
-def make_file_storage(
+def make_storage(
     stream: IO[bytes],
     name: str | None = None,
     mimetype: str | None = None,

@@ -83,7 +83,7 @@ class ZipStrategy(shared.ExtractionStrategy):
                 else:
                     handler = shared.get_handler_for_mimetype(
                         mime,
-                        shared.make_file_storage(
+                        shared.make_storage(
                             archive.open(item),
                             os.path.basename(item),
                             mime,
@@ -96,7 +96,7 @@ class ZipStrategy(shared.ExtractionStrategy):
                 yield {
                     "handler": handler,
                     "name": item,
-                    "source": shared.make_file_storage(archive.open(item)),
+                    "source": shared.make_storage(archive.open(item)),
                     "locator": locator,
                 }
 

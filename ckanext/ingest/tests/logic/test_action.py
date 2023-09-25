@@ -19,7 +19,7 @@ def source():
             mime, _enc = mimetypes.guess_type(filename)
 
         src = open(os.path.join(data, filename), "rb")  # noqa
-        return shared.make_file_storage(src, mimetype=mime)
+        return shared.make_storage(src, mimetype=mime)
 
     return reader
 

@@ -324,6 +324,192 @@ class CsvRowsStrategy(ExtractionStrategy):
     ...
 ```
 
+### Strategy delegation
+
+`ExtractionStrategy.extract` method is responsible for producing records. But
+it doesn't mean that strategy have to generate records itself. Instead,
+strategy can do some preparations and use another strategy in order to make records.
+
+Let's imagine `UrlStrategy` that pulls data from the remote source. As we don't
+know the type of the data, we cannot tell, how records can be created from
+it. So, when data is fetched, we can use its mimetype to select the most
+suitable strategy and delegate record generation to its `extract` method:
+
+```python
+import requests
+import magic
+from io import BytesIO
+from ckanext.ingest import shared
+
+class UrlStrategy(ExtractionStrategy):
+
+    def extract(self, source, options) -> Iterable[Any]:
+        # read URL from file-like source
+        url = source.read()
+        resp = requests.get(url)
+
+        # convert response bytes into `source`
+        sub_source = shared.make_storage(BytesIO(resp.content))
+
+        # identify mimetype
+        mime = magic.from_buffer(sub_source.read(1024))
+        sub_source.seek(0)
+
+        # choose the appropriate strategy
+        handler = shared.get_handler_for_mimetype(mime, sub_source)
+
+        # delegate extraction
+        if handler:
+            yield from handler.extract(source, options)
+```
+
+### Strategy and Record options
+
+`ExtractionStrategy.extract` and `Record.ingest` accept second argument
+`options`. In both cases it's a dictionary that can be used to modify the logic
+inside corresponding methods. Strategy options described by
+`ckanext.ingest.shared.StrategyOptions`, and record options described by
+`ckanext.ingest.shared.RecordOptions`.
+
+Keys defined on the top-level, have sense for every strategy/record. For
+example, `RecordOptions` defines `update_existing` flag. If record that creates
+data detects existing conflicting entity, `update_existing` flag should be
+taken into account when record is considering what to do in such case. It's
+only a recomendation and this flag can be ignored or you can use a different
+option. But using common options simplify understanding of the workflow.
+
+For strategy there are 3 common keys:
+
+* `record_options`: these options should be passed into every record produced
+  by the strategy(`RecordOptions`)
+* `nested_strategy`: if strategy delegates record creation to a different
+  strategy, `nested_strategy` should be prefered over auto-detected
+  strategy(mimetype detection)
+* `locator`: if source is represented by some kind of collection, `locator` is
+  a callable that returns specific members of collection. It can be used when
+  parsing archives, so that strategy can extract package's metadata from one
+  file and upload resources returned by `locator` into it. Or, when parsing
+  XLSX, `locator` may return sheets by title to simplify processing of multiple
+  sheets.
+
+For any options that can be used only by a specific strategy, there is an
+`extras` option inside both `StrategyOptions` and `RecordOptions`. This
+dictionary can hold any data and there are no expectations to its structure.
+
+Keys that are used often inside `extras` may eventually be added as recommended
+options to the top-level. But, as these are only recomendations, you can just
+ignore them and pass whatever data you need as options.
+
+### Data transformation in Record
+
+`ckanext.ingest.shared.Record` class requires two parameters for
+initialization: `raw` data and `options` for the record. When record is
+created, it calls its `trasform` method, that copies `raw` data into `data`
+property. This is the best place for data mapping, before record's `ingest`
+method is called. If you want to remove all empty members from record's `data`,
+it can be done in this way:
+
+```python
+class DenseRecord(Record):
+    def transform(self, raw: Any):
+        self.data = {
+            key: value
+            for key, value in raw.items()
+            if value is not None
+        }
+
+```
+
+### Record ingestion and rsults
+
+Record usually calls one of CKAN API actions during ingestion. In order to do
+it properly, record needs action `context`, which is passed as as single
+argument into `ingest` method. But this is only the most common workflow, so if
+you don't use any action, just ignore the `context`. What is more important, is
+the output of the `ingest`. It must be a dictionary described by
+`ckanext.ingest.shared.IngestionResult`. It has three members:
+
+* `success`: flag that indicates whether ingestion succeeded or failed
+* `result`: data produced by ingestion(package, resource, organization, etc.)
+* `details`: any other details that may be useful. For example, how many
+  entities were modified during ingestion, which API action was used, what were
+  the errors if ingestion failed.
+
+These details are not required by ingestion, but they may be used for building
+ingestion report.
+
+### Configure record trasformation with ckanext-scheming
+
+`ckanext.ingest.record` module contains `PackageRecord` and `ResourceRecord`
+classes that create package/resource. But their `trasform` method is much more
+interesting. It maps `raw` into `data` using field configuration from metadata
+schema defined by ckanext-scheming.
+
+In order to configure mapping, add `ingest_options` attribute to the field defition:
+```yaml
+- field_name: title
+  label: Title
+  ingest_options: {}
+```
+
+During transformation, every key in `raw` is checked agains the schema. If
+schema contains field with `ingest_options` whose `field_name` or `label`
+matches the key from `raw`, this key is copied into `data` and mapped to the
+corresponding `field_name`. I.e, for the field definition above, both `raw`
+versions - `{"title": "hello"}` and `{"Title": "hello"}` will turn into `data`
+with value `{"title": "hello"}`.
+
+If you have completely different names in `raw`, use `aliases`(`list[str]`)
+attribute of `ingest_options`:
+
+```yaml
+- field_name: title
+  label: Title
+  ingest_options:
+      aliasses: [TITLE, "name of the dataset"]
+```
+
+In this case, `{"name of the dataset": "hello"}` and `{"TITLE": "hello"}` will
+turn into `{"title": "hello"}`.
+
+If value requires additional processing before it can be used as a field
+values, specify all applied validators as `convert` attribute of the
+`ingest_options`:
+
+```yaml
+- field_name: title
+  label: Title
+  ingest_options:
+      convert: conver_to_lowercase json_list_or_string
+```
+
+`convert` uses the same syntax as `validators` attribute of the field
+definition. You can use any registered validator inside this field. But, unlike
+validators, if `Invalid` error raised during transformation, field is silently
+ignored and ingestion continues.
+
+Any field from `raw` that has no corresponding field in schema(detected by
+`field_name`/`label` or `ingest_options.aiases`), is not added to the `data`
+and won't be used for package/resource creation.
+
+### Generic strategies
+
+There are a number of strategies available out-of-the box. You probably won't
+use them as-is, but creating a subclass of these strategies may simplify the
+process and solve a couple of common problems.
+
+#### `ingest:scheming_csv`
+
+Defined by `ckanext.ingest.strategy.csv.CsvStrategy`.
+
+#### `ingest:recursive_zip`
+
+Defined by `ckanext.ingest.strategy.zip.CsvStrategy`.
+
+#### `ingest:xlsx`
+
+Defined by `ckanext.ingest.strategy.xlsx.XlsxStrategy`.
+
 ## Configuration
 
 ```ini
