@@ -51,6 +51,7 @@ def extract_records(
     convert_to_json_if_string: types.Validator,
     dict_only: types.Validator,
     ignore_missing: types.Validator,
+    natural_number_validator: types.Validator,
 ) -> types.Schema:
     return {
         "source": [not_missing, into_uploaded_file],
@@ -60,6 +61,8 @@ def extract_records(
             convert_to_json_if_string,
             dict_only,
         ],
+        "skip": [default(0), natural_number_validator],
+        "take": [ignore_missing, natural_number_validator],
     }
 
 
@@ -69,8 +72,6 @@ def import_records(
     convert_to_json_if_string: types.Validator,
     dict_only: types.Validator,
     one_of: types.ValidatorFactory,
-    natural_number_validator: types.Validator,
-    ignore_missing: types.Validator,
 ) -> types.Schema:
     schema = extract_records()
     schema.update(
@@ -78,8 +79,6 @@ def import_records(
             "report": [default("stats"), one_of([t.name for t in artifact.Type])],
             "defaults": [default("{}"), convert_to_json_if_string, dict_only],
             "overrides": [default("{}"), convert_to_json_if_string, dict_only],
-            "skip": [default(0), natural_number_validator],
-            "take": [ignore_missing, natural_number_validator],
         },
     )
 

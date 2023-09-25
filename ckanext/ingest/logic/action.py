@@ -46,7 +46,12 @@ def ingest_extract_records(
     tk.check_access("ingest_extract_records", context, data_dict)
     records = iter_records(data_dict)
 
-    return [r.data for r in records]
+    start = data_dict["skip"]
+    stop = data_dict.get("take")
+    if stop is not None:
+        stop += start
+
+    return [r.data for r in itertools.islice(records, start, stop)]
 
 
 @validate(schema.import_records)
@@ -91,12 +96,17 @@ def ingest_import_records(context: types.Context, data_dict: dict[str, Any]):
 
         try:
             result = record.ingest(tk.fresh_context(context))
+            log.debug("Record ingestion: %s", result)
+
         except tk.ValidationError as e:
+            log.debug("Validation error: %s. Record: %s", e.error_dict, record)
             artifacts.fail({"error": e.error_dict, "source": record.raw})
+
         except tk.ObjectNotFound as e:
+            log.debug("Object not found: %s. Record: %s", e, record)
             artifacts.fail(
                 {
-                    "error": e.message or "Package does not exists",
+                    "error": e.message or "Not found",
                     "source": record.raw,
                 },
             )
