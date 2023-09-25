@@ -23,15 +23,40 @@ And you probably don't need it if you want to:
 
 ## Structure
 
-* [Usage](#usage)
-* [Examples](#examples)
 * [Requirements](#requirements)
 * [Installation](#installation)
+* [Usage](#usage)
+* [Examples](#examples)
+* [Advanced](#advanced)
 * [Configuration](#configuration)
 * [Interfaces](#interfaces)
 * [API](#api)
   * [`ingest_extract_records`](#ingest_extract_records)
   * [`ingest_import_records`](#ingest_import_records)
+
+## Requirements
+
+Compatibility with core CKAN versions:
+
+| CKAN version | Compatible? |
+|--------------|-------------|
+| 2.9          | no          |
+| 2.10         | yes         |
+| master       | yes         |
+
+
+## Installation
+
+To install ckanext-ingest:
+
+1. Install it via **pip**:
+   ```sh
+   pip install ckanext-ingest
+
+   ## with basic XLSX strategy
+   # pip install 'ckanext-ingest[xlsx]'
+   ```
+1. Add `ingest` to the `ckan.plugins` setting in your CKAN config file.
 
 ## Usage
 
@@ -202,31 +227,102 @@ class DeleteStaleDatasetsRecord(Record):
 
 ```
 
-## Requirements
+## Advanced
 
-Compatibility with core CKAN versions:
+To get the most from ingestion workflows, you can make strategies and records
+reusable. Details below will help you in achieving this.
 
-| CKAN version | Compatible? |
-|--------------|-------------|
-| 2.9          | no          |
-| 2.10         | yes         |
-| master       | yes         |
+### Strategy autodetection
 
+`strategy` argument for actions is optional. When it missing, the plugins will
+choose the most suitable strategy for the ingested source. This feature relies
+on `can_handle` and `must_handle` methods of the extraction strategy. Both
+methods receive the mimetype of the source and the source itself and return
+`True`/`False`.
 
-## Installation
+Amont all strategies that return `True` from `can_handle`, plugin will choose
+the first that returns `True` from `must_handle`. If there is no such strategy,
+the first `can_handle` wins.
 
-To install ckanext-ingest:
+`ckanext.ingest.shared.ExtractionStrategy` defines both these
+methods. `must_handle` always returns `False`. `can_handle` return `True` if
+source's mimetype is listed in `mimetypes` property of the handler:
 
-1. Install it via **pip**:
-   ```sh
-   pip install ckanext-ingest
+```python
+class ExtractionStrategy:
+    mimetypes: ClassVar[set[str]] = set()
 
-   ## with basic XLSX strategy
-   # pip install 'ckanext-ingest[xlsx]'
-   ```
-1. Add `ingest` to the `ckan.plugins` setting in your CKAN config file.
+    @classmethod
+    def can_handle(cls, mime: str | None, source) -> bool:
+        return mime in cls.mimetypes
 
+    @classmethod
+    def must_handle(cls, mime, source) -> bool:
+        return False
 
+```
+
+If you want to register strategy that can handle JSON sources, just register
+strategy with an appropriate `mimetypes`:
+
+```python
+class JsonStrategy(ExtractionStrategy):
+    mimetypes = {"application/json"}
+```
+
+If you want to register strategy always handles JSON sources if the filename of
+ingested source is `DRINK_ME.json`, you can use `must_handle`. Note, that
+`must_handle` is checked only when `can_handle` returns `True`, so we still
+using default `mimetypes` logic and not moving everything inside `must_handle`:
+
+```python
+class DrinkMeJsonStrategy(ExtractionStrategy):
+    mimetypes = {"application/json"}
+
+    @classmethod
+    def must_handle(cls, mime, source: Storage) -> bool:
+        return source.filename == "DRINK_ME.json"
+```
+
+### Record factories
+
+`ExtractionStrategy` has a default implementation of `extract`. This default
+implementation calls `chunks` method to parse the source and get ingestable
+data fragments. Then, for every data chunk `chunk_into_record` method is
+called, to transform arbitrary data into a `Record`. Finally, `extract` yields
+whatever is produced by `chunk_into_record`.
+
+Default implementation of `chunks` ignores the source and returns an empty
+list. The first thing you can do to produce a data is overriding `chunks`.
+
+If you are working with CSV file, `chunks` can return rows from this file:
+
+```python
+class CsvRowsStrategy(ExtractionStrategy):
+    mimetypes = {"text/csv"}
+
+    def chunks(self, source, options) -> Iterable[Any]:
+        str_stream = StringIO(source.read().decode())
+        rows = csv.reader(str_stream)
+
+        yield from rows
+```
+
+Such strategy will produce `ckanext.ingest.shared.Record` for every row of the
+source CSV. But base `Record` class doesn't do much, so you need to replace it
+with your own `Record` subclass.
+
+As mentioned before, data chunk converted into a record via `chunk_into_record`
+method. You can either override it, or use default implemmentation, which
+creates instances of the class stored under `record_factory` attribute of the
+strategy. Default value of this attribute is `Record` and if you want to use a
+different record implementation, do the following:
+
+```python
+class CsvRowsStrategy(ExtractionStrategy):
+    record_factory = MyCustomRecord
+    ...
+```
 
 ## Configuration
 
