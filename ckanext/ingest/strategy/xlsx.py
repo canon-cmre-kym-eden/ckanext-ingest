@@ -81,7 +81,7 @@ class XlsxStrategy(shared.ExtractionStrategy):
                 values = [c.value for c in row]
                 data = dict(zip(header, values)) if header else values
 
-                yield shared.Record(
+                yield self.chunk_into_record(
                     {"row": data},
-                    options.get("record_options", shared.RecordOptions()),
+                    options,
                 )

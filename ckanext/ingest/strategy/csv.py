@@ -24,4 +24,8 @@ class CsvStrategy(ExtractionStrategy):
     record_factory = PackageRecord
 
     def chunks(self, source: Storage, options: StrategyOptions):
-        return csv.DictReader(StringIO(source.read().decode()))
+        extras = options.get("extras", {})
+        reader_options = extras.get("reader_options", {})
+        str_stream = StringIO(source.read().decode())
+
+        return csv.DictReader(str_stream, **reader_options)
