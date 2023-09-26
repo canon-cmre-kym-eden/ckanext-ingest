@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from io import BytesIO
 import dataclasses
 import logging
-from typing import IO, Any, Callable, ClassVar, Iterable
+from typing import IO, Any, Callable, ClassVar, Iterable, TypeVar
 
 from typing_extensions import TypedDict
 from werkzeug.datastructures import FileStorage
@@ -14,6 +15,7 @@ log = logging.getLogger(__name__)
 strategies: dict[str, type[ExtractionStrategy]] = {}
 
 Storage = FileStorage
+T = TypeVar("T")
 
 
 class RecordOptions(TypedDict, total=False):
@@ -170,8 +172,40 @@ def get_handler_for_mimetype(
 
 
 def make_storage(
-    stream: IO[bytes],
+    stream: IO[bytes] | str | bytes,
     name: str | None = None,
     mimetype: str | None = None,
 ):
+    """Transform bytes stream(BytesIO), string or bytes into source object
+    expected by ExtractionStrategy.
+
+    """
+    if isinstance(stream, str):
+        stream = stream.encode()
+
+    if isinstance(stream, bytes):
+        stream = BytesIO(stream)
+
     return Storage(stream, name, content_type=mimetype)
+
+
+def get_extra_options(
+    options: StrategyOptions | RecordOptions, key: str, default: T
+) -> T:
+    """Safely return an item from `extras` member of strategy or record
+    options.
+
+    """
+    return options.setdefault("extras", {}).get(key, default)
+
+
+def get_record_options(options: StrategyOptions) -> RecordOptions:
+    """Safely get record options from strategy options.
+
+    If record options are missing, default instance created and added to
+    strategy option before return.
+    """
+    if "record_options" not in options:
+        options["record_options"] = RecordOptions()
+
+    return options["record_options"]
