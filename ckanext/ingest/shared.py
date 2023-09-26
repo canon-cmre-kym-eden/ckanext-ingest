@@ -71,14 +71,23 @@ class Record:
     # original data extracted by strategy
     raw: dict[str, Any]
 
-    # transformed data adapted to the record needs
-    data: dict[str, Any] = dataclasses.field(init=False)
-
     # options received from extraction strategy
     options: RecordOptions = dataclasses.field(default_factory=RecordOptions)
 
+    # transformed data adapted to the record needs
+    data: dict[str, Any] = dataclasses.field(init=False)
+
     def __post_init__(self):
         self.data = self.transform(self.raw)
+
+    def get_extra(self, key: str, default: T) -> T:
+        """Get an option from `self.options["extras"]`.
+
+        If `key` is missing from `extras`, or options do not contain `extras`
+        at all, `default` value is returned.
+
+        """
+        return get_extra(self.options, key, default)
 
     def transform(self, raw: dict[str, Any]) -> dict[str, Any]:
         """Transform arbitrary data into a data that has sense for a record."""
@@ -126,7 +135,7 @@ class ExtractionStrategy:
     def chunk_into_record(self, chunk: Any, options: StrategyOptions) -> Record:
         return self.record_factory(
             chunk,
-            options.get("record_options", RecordOptions()),
+            get_record_options(options),
         )
 
     def extract(
@@ -189,7 +198,7 @@ def make_storage(
     return Storage(stream, name, content_type=mimetype)
 
 
-def get_extra_options(
+def get_extra(
     options: StrategyOptions | RecordOptions, key: str, default: T
 ) -> T:
     """Safely return an item from `extras` member of strategy or record

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## Unreleased
+
+<small>[Compare with latest](https://github.com/DataShades/ckanext-ingest/compare/v1.4.0...HEAD)</small>
+
+### Features
+
+- Record.get_extra method ([a06b89d](https://github.com/DataShades/ckanext-ingest/commit/a06b89dcaa62107b7403e6b477d54d9a7364ca23) by Sergey Motornyuk).
+- add get_extra_options and get_record_options to shared` ([be965c6](https://github.com/DataShades/ckanext-ingest/commit/be965c67af342f7f2cbaa6dbeb89f91e3901a452) by Sergey Motornyuk).
+
+<!-- insertion marker -->
 ## [v1.4.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.4.0) - 2023-09-26
 
 <small>[Compare with v1.3.0](https://github.com/DataShades/ckanext-ingest/compare/v1.3.0...v1.4.0)</small>
