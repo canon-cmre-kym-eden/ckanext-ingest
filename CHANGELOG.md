@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Features
 
-- Record.get_extra method ([a06b89d](https://github.com/DataShades/ckanext-ingest/commit/a06b89dcaa62107b7403e6b477d54d9a7364ca23) by Sergey Motornyuk).
-- add get_extra_options and get_record_options to shared` ([be965c6](https://github.com/DataShades/ckanext-ingest/commit/be965c67af342f7f2cbaa6dbeb89f91e3901a452) by Sergey Motornyuk).
+- Record.get_extra method ([473aa1a](https://github.com/DataShades/ckanext-ingest/commit/473aa1a7b10f68d7118563342011528635ca9550) by Sergey Motornyuk).
+- add get_extra and get_record_options to shared` ([a46a573](https://github.com/DataShades/ckanext-ingest/commit/a46a573855840643fbecdcdff8011ec3ee747670) by Sergey Motornyuk).
 
 <!-- insertion marker -->
 ## [v1.4.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.4.0) - 2023-09-26
