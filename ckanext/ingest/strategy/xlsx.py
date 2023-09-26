@@ -63,7 +63,9 @@ class XlsxStrategy(shared.ExtractionStrategy):
                 "locator": lambda name: doc[name] if name in doc else None,
             }
 
-    def extract(self, source: shared.Storage, options: shared.StrategyOptions):
+    def extract(
+        self, source: shared.Storage, options: shared.StrategyOptions
+    ) -> Iterable[shared.Record]:
         extras = options.get("extras", {})
 
         for chunk in self.chunks(source, options):
