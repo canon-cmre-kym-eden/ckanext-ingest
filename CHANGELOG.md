@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## Unreleased
+## [v1.4.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.4.0) - 2023-09-26
 
-<small>[Compare with latest](https://github.com/DataShades/ckanext-ingest/compare/v1.3.0...HEAD)</small>
+<small>[Compare with v1.3.0](https://github.com/DataShades/ckanext-ingest/compare/v1.3.0...v1.4.0)</small>
 
 ### Features
 
@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - add config declarations ([bd0b81a](https://github.com/DataShades/ckanext-ingest/commit/bd0b81aeabed791e163b5ec0a87c636391c38112) by Sergey Motornyuk).
 - min CKAN v2.10 requirement ([bd07a13](https://github.com/DataShades/ckanext-ingest/commit/bd07a13b37197c56ee16d37abe038030a78dc04b) by Sergey Motornyuk).
 
-<!-- insertion marker -->
 ## [v1.3.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.3.0) - 2023-03-25
 
 <small>[Compare with v1.2.6](https://github.com/DataShades/ckanext-ingest/compare/v1.2.6...v1.3.0)</small>
@@ -69,3 +68,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.0.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.0.0) - 2022-02-07
 
 <small>[Compare with first commit](https://github.com/DataShades/ckanext-ingest/compare/5218fb4ae2e6c806e027ff44a5a17bd41377967c...v1.0.0)</small>
+
