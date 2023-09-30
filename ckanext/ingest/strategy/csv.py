@@ -5,8 +5,8 @@ import logging
 from io import StringIO
 from typing import Any, Iterable
 
-from ckanext.ingest.record import PackageRecord
 from ckanext.ingest import shared
+from ckanext.ingest.record import PackageRecord
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class CsvStrategy(shared.ExtractionStrategy):
     record_factory = PackageRecord
 
     def chunks(
-        self, source: shared.Storage, options: shared.StrategyOptions
+        self, source: shared.Storage, options: shared.StrategyOptions,
     ) -> Iterable[dict[str, Any]]:
         reader_options: dict[str, Any] = shared.get_extra(options, "reader_options", {})
         str_stream = StringIO(source.read().decode())

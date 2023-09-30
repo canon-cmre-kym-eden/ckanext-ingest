@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from io import BytesIO
 import dataclasses
 import logging
+from copy import deepcopy
+from io import BytesIO
 from typing import IO, Any, Callable, ClassVar, Iterable, TypeVar
 
 from typing_extensions import TypedDict
@@ -16,6 +17,7 @@ strategies: dict[str, type[ExtractionStrategy]] = {}
 
 Storage = FileStorage
 T = TypeVar("T")
+SRO = TypeVar("SRO", "RecordOptions", "StrategyOptions")
 
 
 class RecordOptions(TypedDict, total=False):
@@ -198,14 +200,28 @@ def make_storage(
     return Storage(stream, name, content_type=mimetype)
 
 
-def get_extra(
-    options: StrategyOptions | RecordOptions, key: str, default: T
-) -> T:
+def get_extra(options: StrategyOptions | RecordOptions, key: str, default: T) -> T:
     """Safely return an item from `extras` member of strategy or record
     options.
 
     """
     return options.setdefault("extras", {}).get(key, default)
+
+
+def with_extras(options: SRO, extras: dict[str, Any], /, patch: bool = False) -> SRO:
+    """Return a copy of options object with specified extras.
+
+    By default, existing extras replaced by new ones. If named `patch` flat set
+    to True, existing extras are patched via `dict.update`.
+
+    """
+    new_options = deepcopy(options)
+    if patch:
+        new_options.setdefault("extras", {}).update(extras)
+    else:
+        new_options["extras"] = extras
+
+    return new_options
 
 
 def get_record_options(options: StrategyOptions) -> RecordOptions:

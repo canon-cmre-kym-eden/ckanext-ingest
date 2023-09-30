@@ -64,7 +64,7 @@ class XlsxStrategy(shared.ExtractionStrategy):
             }
 
     def extract(
-        self, source: shared.Storage, options: shared.StrategyOptions
+        self, source: shared.Storage, options: shared.StrategyOptions,
     ) -> Iterable[shared.Record]:
         extras = options.get("extras", {})
 
