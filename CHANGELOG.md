@@ -6,16 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## Unreleased
+## [v1.4.1](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.4.1) - 2024-04-02
 
-<small>[Compare with latest](https://github.com/DataShades/ckanext-ingest/compare/v1.4.0...HEAD)</small>
+<small>[Compare with v1.4.0](https://github.com/DataShades/ckanext-ingest/compare/v1.4.0...v1.4.1)</small>
 
 ### Features
 
+- add ingest_options.default` ([638e4e0](https://github.com/DataShades/ckanext-ingest/commit/638e4e063d3dd4abcc9d342f127a78c2413fed09) by Sergey Motornyuk).
+- with_extras shared function ([1ed8976](https://github.com/DataShades/ckanext-ingest/commit/1ed8976cbc4febb0061aaca417b23b9ecec9e92a) by Sergey Motornyuk).
 - Record.get_extra method ([473aa1a](https://github.com/DataShades/ckanext-ingest/commit/473aa1a7b10f68d7118563342011528635ca9550) by Sergey Motornyuk).
 - add get_extra and get_record_options to shared` ([a46a573](https://github.com/DataShades/ckanext-ingest/commit/a46a573855840643fbecdcdff8011ec3ee747670) by Sergey Motornyuk).
 
-<!-- insertion marker -->
 ## [v1.4.0](https://github.com/DataShades/ckanext-ingest/releases/tag/v1.4.0) - 2023-09-26
 
 <small>[Compare with v1.3.0](https://github.com/DataShades/ckanext-ingest/compare/v1.3.0...v1.4.0)</small>
