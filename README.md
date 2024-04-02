@@ -10,15 +10,15 @@ predictable, reusable and flexible.
 
 This extension can be used if you need to:
 
-* ingest a lot of different files in order to create
-  datasets/resources/etc. But you want do import all files in a similar manner
-  and don't want to spend time introducing and explaining the whole process.
+* Create datasets/resources/etc using data from multiple files. But you want do
+  import all files in a similar manner and don't want to spend time introducing
+  and explaining the whole process.
 * reuse ingestion logic in different projects
 * share pieces of logic between different ingestion workflows
 
 And you probably don't need it if you want to:
 
-* import a single file using CLI and never use this code again.
+* import a single file using CLI once and and never do it again.
 
 
 ## Structure
@@ -69,9 +69,9 @@ ckanapi action ingest_import_records source@path/to/data.zip strategy="myext:ext
 ```
 
 But before anything can be ingested you have to regiser a `strategy` that
-produces `records`. `strategy` defines how source is parsed, and `record`
-represent minimal amount of data from the source that is required for
-**ingestion**(process when something is created/updated/etc.).
+produces `records`. `strategy` defines how source is parsed and divided into
+data chunks, and `record` wraps single data chunk and perform actions using
+information from the chunk.
 
 `strategy` is registered via `IIngest` interface. It has to be a subclass of
 `ckanext.ingest.shared.ExtractionStrategy`. The only requirement for
@@ -103,7 +103,7 @@ class MyPlugin(p.SingletonPlugin):
 
 ```
 
-### JSON with the data for a single dataset
+### Strategy thay reads JSON file and creates a single dataset from it.
 ```python
 import ckan.plugins.toolkit as tk
 from ckanext.ingest.shared import ExtractionStrategy, Storage, Record, IngestionResult
@@ -124,7 +124,7 @@ class SimplePackageRecord(Record):
 
         dataset = tk.get_action("package_create")(context, self.data)
 
-        # `ingest` returns a brief overvies of the ingestion
+        # `ingest` returns a brief overview of the ingestion result
         return {
             "success": True,
             "result": dataset,
@@ -133,7 +133,7 @@ class SimplePackageRecord(Record):
 
 ```
 
-### CSV with a list of organizations that require removal
+### Strategy that reads from CSV names of organizations that must be removed from the portal
 
 ```python
 import csv
@@ -169,7 +169,7 @@ class DropOrganizationRecord(Record):
 
 ```
 
-### Pull datasets from CKAN instance specified in JSON, and remove datasets that were not modified by this ingestion.
+### Pull datasets from CKAN instance specified in JSON(like ckanext-harvest), and remove datasets that were not updated during ingestion
 
 ```python
 import json
@@ -191,6 +191,8 @@ class HarvestStrategy(ExtractionStrategy):
             yield SimpleDatasetRecord(row, {})
 
         # produce an additional record that removes stale datasets
+        # (datasets that were modified before ingestion started and were
+        # not updated during current ingestion)
         yield DeleteStaleDatasetsRecord({"before": now}, {})
 
 class SimplePackageRecord(Record):
@@ -224,25 +226,24 @@ class DeleteStaleDatasetsRecord(Record):
             "details": {"count": len(deleted), "before": before}
         }
 
-
 ```
 
 ## Advanced
 
-To get the most from ingestion workflows, you can make strategies and records
-reusable. Details below will help you in achieving this.
+To get the most from ingestion workflows, try writing reusable strategies and
+records using details below
 
 ### Strategy autodetection
 
-`strategy` argument for actions is optional. When it missing, the plugins will
-choose the most suitable strategy for the ingested source. This feature relies
-on `can_handle` and `must_handle` methods of the extraction strategy. Both
-methods receive the mimetype of the source and the source itself and return
-`True`/`False`.
+`strategy` argument for actions is optional. When it missing, the plugins
+chooses the most appropriate strategy for the ingested source. This feature
+relies on `can_handle` and `must_handle` methods of the extraction
+strategy. Both methods receive the mimetype of the source and the source itself
+and return `True`/`False`.
 
-Amont all strategies that return `True` from `can_handle`, plugin will choose
-the first that returns `True` from `must_handle`. If there is no such strategy,
-the first `can_handle` wins.
+Among all strategies that return `True` from `can_handle`, plugin selects the
+first strategy that returns `True` from `must_handle` as well. If there is no
+such strategy, the first `can_handle` wins.
 
 `ckanext.ingest.shared.ExtractionStrategy` defines both these
 methods. `must_handle` always returns `False`. `can_handle` return `True` if
@@ -270,10 +271,13 @@ class JsonStrategy(ExtractionStrategy):
     mimetypes = {"application/json"}
 ```
 
-If you want to register strategy always handles JSON sources if the filename of
-ingested source is `DRINK_ME.json`, you can use `must_handle`. Note, that
-`must_handle` is checked only when `can_handle` returns `True`, so we still
-using default `mimetypes` logic and not moving everything inside `must_handle`:
+If there are more than one strategy that supports JSON mimetype, the first
+registered strategy is selected. If you want to register strategy that aalways
+handles JSON sources with specific name(`DRINK_ME.json`), disregarding the
+order, you can use `must_handle`.
+
+Note, that `must_handle` is checked only when `can_handle` returns `True`, so
+we still using default `mimetypes` logic:
 
 ```python
 class DrinkMeJsonStrategy(ExtractionStrategy):
@@ -293,9 +297,11 @@ called, to transform arbitrary data into a `Record`. Finally, `extract` yields
 whatever is produced by `chunk_into_record`.
 
 Default implementation of `chunks` ignores the source and returns an empty
-list. The first thing you can do to produce a data is overriding `chunks`.
+list. As result, by default any source produce zero records and nothing happens.
 
-If you are working with CSV file, `chunks` can return rows from this file:
+The first thing you can do to produce a data is overriding `chunks`.
+
+If you are working with CSV file, `chunks` can return rows from the file:
 
 ```python
 class CsvRowsStrategy(ExtractionStrategy):
@@ -315,8 +321,8 @@ with your own `Record` subclass.
 As mentioned before, data chunk converted into a record via `chunk_into_record`
 method. You can either override it, or use default implemmentation, which
 creates instances of the class stored under `record_factory` attribute of the
-strategy. Default value of this attribute is `Record` and if you want to use a
-different record implementation, do the following:
+strategy. Default value of this attribute is `ckanext.ingest.shared.Record` and
+if you want to use a different record implementation, do the following:
 
 ```python
 class CsvRowsStrategy(ExtractionStrategy):
@@ -330,10 +336,11 @@ class CsvRowsStrategy(ExtractionStrategy):
 it doesn't mean that strategy have to generate records itself. Instead,
 strategy can do some preparations and use another strategy in order to make records.
 
-Let's imagine `UrlStrategy` that pulls data from the remote source. As we don't
-know the type of the data, we cannot tell, how records can be created from
-it. So, when data is fetched, we can use its mimetype to select the most
-suitable strategy and delegate record generation to its `extract` method:
+Let's imagine `UrlStrategy` that accepts file with a single line - URL of the
+remote portal - and pulls data from this portal. As we don't know the
+type of the data, we cannot tell, how records can be created from it. So, when
+data is fetched, we can use its mimetype to select the most suitable strategy
+and delegate record generation to its `extract` method:
 
 ```python
 import requests
@@ -374,7 +381,7 @@ inside corresponding methods. Strategy options described by
 Keys defined on the top-level, have sense for every strategy/record. For
 example, `RecordOptions` defines `update_existing` flag. If record that creates
 data detects existing conflicting entity, `update_existing` flag should be
-taken into account when record is considering what to do in such case. It's
+taken into account when the record is considering what to do in such case. It's
 only a recomendation and this flag can be ignored or you can use a different
 option. But using common options simplify understanding of the workflow.
 
@@ -389,7 +396,7 @@ For strategy there are 3 common keys:
   a callable that returns specific members of collection. It can be used when
   parsing archives, so that strategy can extract package's metadata from one
   file and upload resources returned by `locator` into it. Or, when parsing
-  XLSX, `locator` may return sheets by title to simplify processing of multiple
+  XLSX, `locator` can return sheets by title to simplify processing of multiple
   sheets.
 
 For any options that can be used only by a specific strategy, there is an
@@ -407,7 +414,7 @@ initialization: `raw` data and `options` for the record. When record is
 created, it calls its `trasform` method, that copies `raw` data into `data`
 property. This is the best place for data mapping, before record's `ingest`
 method is called. If you want to remove all empty members from record's `data`,
-it can be done in this way:
+it can be done in the following way:
 
 ```python
 class DenseRecord(Record):

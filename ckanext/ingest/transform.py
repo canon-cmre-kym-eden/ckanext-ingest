@@ -9,6 +9,7 @@ import ckan.plugins.toolkit as tk
 
 TransformationSchema: TypeAlias = "dict[str, Field]"
 
+_default = object()
 
 @dataclasses.dataclass
 class Options:
@@ -39,6 +40,9 @@ class Options:
 
     # convert raw field using validators. Validation errors are ignored.
     convert: str = ""
+
+    # use default value when field is missing
+    default: Any = _default
 
     def __post_init__(self):
         if isinstance(self.aliases, str):
@@ -124,7 +128,10 @@ def _transform(data: dict[str, Any], schema: TransformationSchema) -> dict[str, 
             if k in data:
                 break
         else:
-            continue
+            if rules.options.default is _default:
+                continue
+            k = field
+            data[k] = rules.options.default
 
         validators = validators_from_string(
             rules.options.convert,
