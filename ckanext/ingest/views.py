@@ -41,15 +41,18 @@ class IngestView(MethodView):
             data.update(parse_params(tk.request.files))
             result = tk.get_action("ingest_import_records")({}, data)
 
-            for id_ in result:
-                pkg = tk.get_action("package_show")({}, {"id": id_})
-                tk.h.flash_success(
-                    "Success: <a href='{url}'>{title}</a>".format(
-                        title=pkg["title"],
-                        url=tk.h.url_for(pkg["type"] + ".read", id=pkg["name"]),
-                    ),
-                    True,
-                )
+            if data['report'] == 'details':
+                for ingested in result:
+                    pkg = tk.get_action("package_show")({}, ingested['result']['result'])
+                    tk.h.flash_success(
+                        "Success: <a href='{url}'>{title}</a>".format(
+                            title=pkg["title"],
+                            url=tk.h.url_for(pkg["type"] + ".read", id=pkg["name"]),
+                        ),
+                        True,
+                    )
+            else:
+                tk.h.flash_success("Success: {success}</br>Failed: {fail}".format(**result), True)
 
             return tk.redirect_to("ingest.index")
 
